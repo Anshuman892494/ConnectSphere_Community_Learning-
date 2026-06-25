@@ -1,5 +1,4 @@
 import React from 'react';
-import AppButton from './AppButton';
 
 const ErrorState = ({
   title = 'Something went wrong',
@@ -17,13 +16,12 @@ const ErrorState = ({
         {message}
       </p>
       {onRetry && (
-        <AppButton
+        <button
           onClick={onRetry}
-          variant="danger"
-          className="mt-4"
+          className="mt-4 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
           Try Again
-        </AppButton>
+        </button>
       )}
     </div>
   );

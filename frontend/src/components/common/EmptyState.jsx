@@ -1,5 +1,4 @@
 import React from 'react';
-import AppButton from './AppButton';
 
 const EmptyState = ({
   title = 'No records found',
@@ -18,13 +17,12 @@ const EmptyState = ({
         {message}
       </p>
       {actionLabel && onAction && (
-        <AppButton
+        <button
           onClick={onAction}
-          variant="primary"
-          className="mt-4"
+          className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors"
         >
           {actionLabel}
-        </AppButton>
+        </button>
       )}
     </div>
   );

@@ -11,7 +11,7 @@ const app = express();
 
 // Standard Middlewares
 app.use(cors({
-  origin: '*', // Allow connections from Vite frontend
+  origin: true,
   credentials: true
 }));
 app.use(express.json());
@@ -25,21 +25,11 @@ app.use((req, res, next) => {
 
 // Import routes
 const authRoutes = require('./routes/auth.routes');
-const userRoutes = require('./routes/user.routes');
 const postRoutes = require('./routes/post.routes');
-const qaRoutes = require('./routes/qa.routes');
-const transferRoutes = require('./routes/transfer.routes');
-const subscriptionRoutes = require('./routes/subscription.routes');
-const adminRoutes = require('./routes/admin.routes');
 
 // Use routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
-app.use('/api/qa', qaRoutes);
-app.use('/api/transfers', transferRoutes);
-app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/admin', adminRoutes);
 
 // Base route
 app.get('/', (req, res) => {

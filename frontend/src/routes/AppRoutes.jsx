@@ -6,13 +6,7 @@ import ProtectedRoute from './ProtectedRoute';
 import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Feed from '../pages/Feed';
-import QAList from '../pages/QAList';
-import QADetails from '../pages/QADetails';
-import Profile from '../pages/Profile';
-import PointTransferPage from '../pages/PointTransferPage';
-import SubscriptionPage from '../pages/SubscriptionPage';
-import SecurityMonitoring from '../pages/SecurityMonitoring';
-import AdminDashboard from '../pages/AdminDashboard';
+import Verify from '../pages/Verify';
 
 // Layout Components
 import Navbar from '../components/layout/Navbar';
@@ -42,22 +36,16 @@ const AppRoutes = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
+      {/* Verification page (accessible only to logged in but unverified users) */}
+      <Route element={<ProtectedRoute allowUnverified={true} />}>
+        <Route path="/verify" element={<Verify />} />
+      </Route>
+
       {/* Protected Routes Group */}
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
-          {/* Main User Pages */}
+          {/* Main User Dashboard / Feed */}
           <Route path="/" element={<Feed />} />
-          <Route path="/qa" element={<QAList />} />
-          <Route path="/qa/:id" element={<QADetails />} />
-          <Route path="/profile/:id" element={<Profile />} />
-          <Route path="/transfer" element={<PointTransferPage />} />
-          <Route path="/subscriptions" element={<SubscriptionPage />} />
-          <Route path="/security" element={<SecurityMonitoring />} />
-          
-          {/* Admin Moderation Page */}
-          <Route element={<ProtectedRoute adminOnly={true} />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-          </Route>
         </Route>
       </Route>
 

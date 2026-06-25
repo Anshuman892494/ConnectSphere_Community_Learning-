@@ -1,15 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { Heart, MessageSquare, Image, Video, Send, Trash2 } from 'lucide-react';
+import { Heart, MessageSquare, Send, Trash2 } from 'lucide-react';
 import API from '../services/api';
 import { useToast } from '../contexts/ToastContext';
-import AppButton from '../components/common/AppButton';
-import AppInput from '../components/common/AppInput';
-import AppTextarea from '../components/common/AppTextarea';
-import AppSelect from '../components/common/AppSelect';
-import AppCard from '../components/layout/AppCard';
-import AppAvatar from '../components/common/AppAvatar';
-import AppLoader from '../components/common/AppLoader';
 import EmptyState from '../components/common/EmptyState';
 
 const Feed = () => {
@@ -52,7 +45,7 @@ const Feed = () => {
       return;
     }
 
-    // Default mock images if user selects photo/video but leaves URL blank
+    // Default mock images if user leaves URL blank
     let finalMediaUrl = mediaUrl.trim();
     if (postType === 'photo' && !finalMediaUrl) {
       finalMediaUrl = 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&auto=format&fit=crop&q=60';
@@ -71,7 +64,7 @@ const Feed = () => {
       setCaption('');
       setMediaUrl('');
       setPostType('text');
-      addToast('Post created! +5 Points Awarded', 'success');
+      addToast('Post created successfully!', 'success');
     } catch (err) {
       addToast('Failed to publish post', 'error');
     } finally {
@@ -108,71 +101,86 @@ const Feed = () => {
     if (!window.confirm('Are you sure you want to delete this post?')) return;
     
     try {
-      await API.delete(`/admin/posts/${postId}`);
+      await API.delete(`/posts/${postId}`);
       setPosts((prev) => prev.filter((p) => p._id !== postId));
-      addToast('Post deleted by Admin moderation', 'success');
+      addToast('Post deleted successfully!', 'success');
     } catch (err) {
       addToast('Failed to delete post', 'error');
     }
   };
 
   return (
-    <div className="flex flex-col md:flex-row gap-6">
+    <div className="flex flex-col lg:flex-row gap-6">
       {/* Left Area: Main Feed */}
       <div className="flex-1 space-y-6">
         {/* Post Creation Form */}
-        <AppCard className="p-5 border border-slate-100 dark:border-darkborder bg-white dark:bg-darkcard glassmorphism">
+        <div className="p-5 border border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard rounded-2xl shadow-sm">
           <form onSubmit={handleCreatePost} className="space-y-4">
             <h3 className="font-bold text-slate-800 dark:text-slate-200">Share Knowledge or Updates</h3>
             
-            <AppTextarea
+            <textarea
               placeholder="What are you learning today? Type details here..."
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
               rows={2}
               required
+              className="w-full px-4 py-2 border border-slate-200 dark:border-darkborder rounded-xl bg-white dark:bg-darkbg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
             />
 
             <div className="flex flex-col sm:flex-row gap-4 items-end">
-              <AppSelect
-                label="Attachment Type"
-                value={postType}
-                onChange={(e) => {
-                  setPostType(e.target.value);
-                  if (e.target.value === 'text') setMediaUrl('');
-                }}
-                options={[
-                  { value: 'text', label: 'Plain Text' },
-                  { value: 'photo', label: 'Photo Image' },
-                  { value: 'video', label: 'Video Clip' },
-                ]}
-              />
+              <div className="flex flex-col gap-1.5 w-full">
+                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                  Attachment Type
+                </label>
+                <select
+                  value={postType}
+                  onChange={(e) => {
+                    setPostType(e.target.value);
+                    if (e.target.value === 'text') setMediaUrl('');
+                  }}
+                  className="w-full px-4 py-2.5 border border-slate-200 dark:border-darkborder rounded-xl bg-white dark:bg-darkbg text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                >
+                  <option value="text">Plain Text</option>
+                  <option value="photo">Photo Image</option>
+                  <option value="video">Video Clip</option>
+                </select>
+              </div>
 
               {postType !== 'text' && (
-                <AppInput
-                  label="Media Link (Optional)"
-                  placeholder="Paste URL or leave blank for a mock default"
-                  value={mediaUrl}
-                  onChange={(e) => setMediaUrl(e.target.value)}
-                />
+                <div className="flex flex-col gap-1.5 w-full">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Media Link (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Paste URL or leave blank for default"
+                    value={mediaUrl}
+                    onChange={(e) => setMediaUrl(e.target.value)}
+                    className="w-full px-4 py-2.5 border border-slate-200 dark:border-darkborder rounded-xl bg-white dark:bg-darkbg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+                  />
+                </div>
               )}
             </div>
 
             <div className="flex justify-end border-t border-slate-100 dark:border-darkborder/50 pt-3">
-              <AppButton
+              <button
                 type="submit"
-                variant="primary"
-                isLoading={isSubmitting}
+                disabled={isSubmitting}
+                className="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
               >
-                Publish Post
-              </AppButton>
+                {isSubmitting ? 'Publishing...' : 'Publish Post'}
+              </button>
             </div>
           </form>
-        </AppCard>
+        </div>
 
         {/* Posts List */}
         {isLoading ? (
-          <AppLoader type="skeleton" rows={3} />
+          <div className="space-y-4 animate-pulse">
+            <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+            <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+            <div className="h-32 bg-slate-200 dark:bg-slate-800 rounded-xl" />
+          </div>
         ) : posts.length === 0 ? (
           <EmptyState
             title="Feed is empty"
@@ -185,16 +193,21 @@ const Feed = () => {
               const postOwnerName = post.user?.username || 'Unknown User';
               
               return (
-                <AppCard key={post._id} className="p-5 border border-slate-100 dark:border-darkborder bg-white dark:bg-darkcard">
+                <div key={post._id} className="p-5 border border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard rounded-2xl shadow-sm">
                   {/* Post Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                      <AppAvatar
-                        name={postOwnerName}
-                        src={post.user?.avatar}
-                        size="md"
-                        isPremium={post.user?.subscription?.status === 'premium'}
-                      />
+                      {post.user?.avatar ? (
+                        <img
+                          src={post.user.avatar}
+                          alt={postOwnerName}
+                          className="h-10 w-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm uppercase">
+                          {postOwnerName.charAt(0)}
+                        </div>
+                      )}
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -211,11 +224,11 @@ const Feed = () => {
                       </div>
                     </div>
 
-                    {/* Moderation Controls */}
-                    {user?.role === 'admin' && (
+                    {/* Moderation / Owner Controls */}
+                    {(user?.role === 'admin' || post.user?._id === user?._id || post.user === user?._id) && (
                       <button
                         onClick={() => handleDeletePost(post._id)}
-                        className="text-slate-400 hover:text-rose-600 transition-colors"
+                        className="text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
                         title="Delete Post"
                       >
                         <Trash2 size={16} />
@@ -233,7 +246,7 @@ const Feed = () => {
                     <div className="rounded-xl overflow-hidden mb-4 border border-slate-100 dark:border-darkborder/50 bg-slate-50 dark:bg-slate-900 max-h-96 flex items-center justify-center">
                       <img
                         src={post.mediaUrl}
-                        alt="Shared Photo Attachment"
+                        alt="Post media"
                         className="object-cover max-h-96 w-full"
                       />
                     </div>
@@ -253,7 +266,7 @@ const Feed = () => {
                   <div className="flex items-center gap-6 border-t border-slate-100 dark:border-darkborder/40 pt-3">
                     <button
                       onClick={() => handleLike(post._id)}
-                      className={`flex items-center gap-1.5 text-xs font-semibold transition-colors ${
+                      className={`flex items-center gap-1.5 text-xs font-semibold transition-colors cursor-pointer ${
                         isLiked
                           ? 'text-rose-500 hover:text-rose-600'
                           : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'
@@ -269,7 +282,7 @@ const Feed = () => {
                           activeCommentsPostId === post._id ? null : post._id
                         )
                       }
-                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                      className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors cursor-pointer"
                     >
                       <MessageSquare size={16} />
                       <span>{post.comments?.length || 0} Comments</span>
@@ -284,11 +297,17 @@ const Feed = () => {
                         <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
                           {post.comments.map((comment) => (
                             <div key={comment._id} className="flex gap-2.5 items-start bg-slate-50/50 dark:bg-darkbg/30 p-2.5 rounded-xl border border-slate-100/50 dark:border-darkborder/30">
-                              <AppAvatar
-                                name={comment.user?.username}
-                                src={comment.user?.avatar}
-                                size="sm"
-                              />
+                              {comment.user?.avatar ? (
+                                <img
+                                  src={comment.user.avatar}
+                                  alt={comment.user?.username}
+                                  className="h-8 w-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-8 w-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-xs uppercase">
+                                  {comment.user?.username ? comment.user.username.charAt(0) : 'U'}
+                                </div>
+                              )}
                               <div className="flex-1">
                                 <div className="flex items-center justify-between">
                                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -298,7 +317,7 @@ const Feed = () => {
                                     {new Date(comment.createdAt).toLocaleDateString()}
                                   </span>
                                 </div>
-                                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1">
+                                <p className="text-xs text-slate-650 dark:text-slate-305 mt-1">
                                   {comment.text}
                                 </p>
                               </div>
@@ -308,8 +327,9 @@ const Feed = () => {
                       )}
 
                       {/* Comment Input */}
-                      <div className="flex gap-2">
-                        <AppInput
+                      <div className="flex gap-2 items-center">
+                        <input
+                          type="text"
                           placeholder="Write a comment reply..."
                           value={commentTexts[post._id] || ''}
                           onChange={(e) =>
@@ -318,45 +338,41 @@ const Feed = () => {
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') handleAddComment(post._id);
                           }}
+                          className="w-full px-4 py-2 border border-slate-200 dark:border-darkborder rounded-xl bg-white dark:bg-darkbg text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
                         />
-                        <AppButton
+                        <button
                           onClick={() => handleAddComment(post._id)}
-                          variant="secondary"
-                          className="px-3"
+                          className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-darkborder dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl cursor-pointer"
                         >
                           <Send size={14} />
-                        </AppButton>
+                        </button>
                       </div>
                     </div>
                   )}
-                </AppCard>
+                </div>
               );
             })}
           </div>
         )}
       </div>
 
-      {/* Right Area: Extra side widget details (e.g. system leader board overview) */}
+      {/* Right Area: Extra side widget details */}
       <div className="hidden lg:block w-72 space-y-6">
-        <AppCard className="p-5 border border-slate-100 dark:border-darkborder bg-white dark:bg-darkcard">
+        <div className="p-5 border border-slate-200 dark:border-darkborder bg-white dark:bg-darkcard rounded-2xl shadow-sm">
           <h3 className="font-bold text-sm text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-4">
             💡 Learning Tips
           </h3>
           <ul className="space-y-3 text-xs text-slate-600 dark:text-slate-400">
             <li className="flex gap-2">
               <span>📚</span>
-              <span>Post helpful codes, summaries, and explanations to increase reputation.</span>
+              <span>Post helpful codes, summaries, and explanations to build community reputation.</span>
             </li>
             <li className="flex gap-2">
               <span>💬</span>
-              <span>Ask structured questions in the board. Be descriptive and add helpful tags.</span>
-            </li>
-            <li className="flex gap-2">
-              <span>🎁</span>
-              <span>Send point gifts to users who answered your questions or shared good posts.</span>
+              <span>Ask questions or share updates to start interesting discussions.</span>
             </li>
           </ul>
-        </AppCard>
+        </div>
       </div>
     </div>
   );

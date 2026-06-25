@@ -41,45 +41,36 @@ const UserSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-    friends: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    friendRequests: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-      },
-    ],
-    points: {
-      type: Number,
-      default: 100,
+
+    phone: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
     },
-    reputation: {
-      type: Number,
-      default: 0,
+    isEmailVerified: {
+      type: Boolean,
+      default: false,
     },
-    subscription: {
-      status: {
-        type: String,
-        enum: ['free', 'premium'],
-        default: 'free',
-      },
-      plan: {
-        type: String,
-        enum: ['none', 'silver', 'gold', 'platinum'],
-        default: 'none',
-      },
-      expiresAt: {
-        type: Date,
-        default: null,
-      },
-      razorpaySubscriptionId: {
-        type: String,
-        default: '',
-      },
+    isPhoneVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationCode: {
+      type: String,
+    },
+    emailVerificationExpires: {
+      type: Date,
+    },
+    phoneVerificationCode: {
+      type: String,
+    },
+    phoneVerificationExpires: {
+      type: Date,
+    },
+    refreshToken: {
+      type: String,
+      default: '',
     },
   },
   {

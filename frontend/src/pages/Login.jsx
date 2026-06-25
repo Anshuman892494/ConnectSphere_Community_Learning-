@@ -4,13 +4,11 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { loginStart, loginSuccess, loginFailure } from '../store/authSlice';
 import { useToast } from '../contexts/ToastContext';
 import API from '../services/api';
-import AppButton from '../components/common/AppButton';
-import AppInput from '../components/common/AppInput';
-import AppCard from '../components/layout/AppCard';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState({});
   
   const dispatch = useDispatch();
@@ -43,7 +41,7 @@ const Login = () => {
 
     dispatch(loginStart());
     try {
-      const response = await API.post('/auth/login', { email, password });
+      const response = await API.post('/auth/login', { email, password, rememberMe });
       dispatch(loginSuccess(response.data));
       addToast(`Welcome back, ${response.data.username}!`, 'success');
       navigate('/');
@@ -66,45 +64,94 @@ const Login = () => {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <AppCard className="p-8 shadow-xl bg-white dark:bg-darkcard border border-slate-100 dark:border-darkborder glassmorphism">
+        <div className="p-8 shadow bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder rounded-2xl">
           <form className="space-y-6" onSubmit={handleSubmit}>
-            <AppInput
-              label="Email Address"
-              type="email"
-              name="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              error={errors.email}
-              placeholder="you@example.com"
-              required
-            />
+            
+            {/* Email Field */}
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Email Address
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+                className={`w-full px-4 py-2.5 rounded-xl border bg-white text-slate-800 dark:bg-darkbg dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
+                  errors.email
+                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30'
+                    : 'border-slate-200 dark:border-darkborder focus:border-primary-500'
+                }`}
+              />
+              {errors.email && (
+                <span className="text-xs text-rose-500 font-medium mt-0.5">{errors.email}</span>
+              )}
+            </div>
 
-            <AppInput
-              label="Password"
-              type="password"
-              name="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              error={errors.password}
-              placeholder="••••••••"
-              required
-            />
+            {/* Password Field */}
+            <div className="flex flex-col gap-1.5 w-full">
+              <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                Password
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                className={`w-full px-4 py-2.5 rounded-xl border bg-white text-slate-800 dark:bg-darkbg dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
+                  errors.password
+                    ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30'
+                    : 'border-slate-200 dark:border-darkborder focus:border-primary-500'
+                }`}
+              />
+              {errors.password && (
+                <span className="text-xs text-rose-500 font-medium mt-0.5">{errors.password}</span>
+              )}
+            </div>
 
+            {/* Remember Me */}
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-slate-200 dark:border-darkborder text-primary-600 focus:ring-primary-500 focus:ring-offset-0 bg-transparent"
+                />
+                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Remember Me
+                </span>
+              </label>
+            </div>
+
+            {/* Error Message */}
             {error && (
               <div className="p-3 bg-rose-50/50 dark:bg-rose-950/20 text-rose-500 rounded-xl text-xs font-semibold border border-rose-100 dark:border-rose-950/30">
                 ⚠️ {error}
               </div>
             )}
 
+            {/* Submit Button */}
             <div>
-              <AppButton
+              <button
                 type="submit"
-                variant="primary"
-                className="w-full py-2.5"
-                isLoading={isLoading}
+                disabled={isLoading}
+                className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
-                Sign In
-              </AppButton>
+                {isLoading ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2050/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                    </svg>
+                    <span>Signing In...</span>
+                  </>
+                ) : (
+                  'Sign In'
+                )}
+              </button>
             </div>
           </form>
 
@@ -119,7 +166,7 @@ const Login = () => {
               </Link>
             </p>
           </div>
-        </AppCard>
+        </div>
       </div>
     </div>
   );

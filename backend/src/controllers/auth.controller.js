@@ -1,57 +1,111 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const LoginHistory = require('../models/LoginHistory');
 
-// Generate Token helper
-const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'connectsphere_jwt_secret_token_key_12345', {
-    expiresIn: '30d',
-  });
+const JWT_SECRET = process.env.JWT_SECRET || 'connectsphere_jwt_secret_token_key_12345';
+
+// Helper: Generate 6-digit OTP
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+// Helper: Generate Access Token (short-lived)
+const generateAccessToken = (id) => {
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '15m' });
+};
+
+// Helper: Generate Refresh Token (long-lived)
+const generateRefreshToken = (id) => {
+  return jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
+};
+
+// Helper: Extract refresh token from cookies
+const getRefreshToken = (req) => {
+  if (req.cookies && req.cookies.refreshToken) {
+    return req.cookies.refreshToken;
+  }
+  if (req.headers.cookie) {
+    const rawCookies = req.headers.cookie.split('; ');
+    for (const c of rawCookies) {
+      const [name, val] = c.split('=');
+      if (name === 'refreshToken') return val;
+    }
+  }
+  return null;
 };
 
 // @desc    Register a new user
 // @route   POST /api/auth/register
-// @access  Public
 exports.register = async (req, res, next) => {
   try {
-    const { username, email, password } = req.body;
+    const { username, email, phone, password } = req.body;
 
-    // Check if user exists
-    const userExists = await User.findOne({ $or: [{ email }, { username }] });
+    // Check if username, email, or phone already exists
+    const userExists = await User.findOne({
+      $or: [{ email }, { username }, { phone: phone || null }],
+    });
     if (userExists) {
-      return res.status(400).json({ message: 'Username or email already registered' });
+      return res.status(400).json({ message: 'Username, email, or phone number already registered' });
     }
 
-    // Create user
+    // Generate simple 6-digit OTPs
+    const emailOtp = generateOTP();
+    const phoneOtp = generateOTP();
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000); // 15 minutes
+
+    // Determine role (first user is admin, else user)
+    const isFirstUser = (await User.countDocuments({})) === 0;
+    const role = isFirstUser ? 'admin' : 'user';
+
+    // Create User
     const user = await User.create({
       username,
       email,
+      phone,
       password,
-      // First registered user is Admin (convenient for setup)
-      role: (await User.countDocuments({})) === 0 ? 'admin' : 'user',
+      role,
+      emailVerificationCode: emailOtp,
+      emailVerificationExpires: otpExpiry,
+      phoneVerificationCode: phoneOtp,
+      phoneVerificationExpires: otpExpiry,
+      isEmailVerified: false,
+      isPhoneVerified: false,
     });
 
-    if (user) {
-      // Record initial success login history
-      await LoginHistory.create({
-        user: user._id,
-        ipAddress: req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown',
-        userAgent: req.headers['user-agent'] || 'Unknown',
-        status: 'success',
-      });
+    // Print OTPs to server console for testing
+    console.log('\n=========================================');
+    console.log(`[DEV ONLY] OTP codes for ${username}:`);
+    console.log(`Email OTP: ${emailOtp}`);
+    console.log(`Phone OTP: ${phoneOtp}`);
+    console.log('=========================================\n');
 
-      res.status(201).json({
-        _id: user._id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        points: user.points,
-        reputation: user.reputation,
-        token: generateToken(user._id),
-      });
-    } else {
-      res.status(400).json({ message: 'Invalid user data' });
-    }
+    // Generate tokens
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Save refresh token to user
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Set cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    });
+
+    res.status(201).json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      isPhoneVerified: user.isPhoneVerified,
+      token: accessToken,
+      _devEmailOtp: emailOtp,
+      _devPhoneOtp: phoneOtp,
+    });
   } catch (error) {
     next(error);
   }
@@ -59,83 +113,342 @@ exports.register = async (req, res, next) => {
 
 // @desc    Authenticate user & get token
 // @route   POST /api/auth/login
-// @access  Public
 exports.login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, rememberMe } = req.body;
 
-    // Check for user
     const user = await User.findOne({ email }).select('+password');
-
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'Unknown';
-    const userAgent = req.headers['user-agent'] || 'Unknown';
-
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
     if (user.isBlocked) {
-      return res.status(403).json({ message: 'This account has been suspended by an Administrator' });
+      return res.status(403).json({ message: 'This account has been suspended' });
     }
 
-    // Check if password matches
     const isMatch = await user.matchPassword(password);
-
     if (!isMatch) {
-      // Log failed attempt
-      await LoginHistory.create({
-        user: user._id,
-        ipAddress,
-        userAgent,
-        status: 'failed',
-      });
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
-    // Log success attempt
-    await LoginHistory.create({
-      user: user._id,
-      ipAddress,
-      userAgent,
-      status: 'success',
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // Set cookie expiry
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000; // 30 days vs 1 day
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge,
     });
 
     res.json({
       _id: user._id,
       username: user.username,
       email: user.email,
+      phone: user.phone || '',
       role: user.role,
-      points: user.points,
-      reputation: user.reputation,
-      subscription: user.subscription,
-      token: generateToken(user._id),
+      isEmailVerified: user.isEmailVerified,
+      isPhoneVerified: user.isPhoneVerified,
+      token: accessToken,
     });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get current logged in user
-// @route   GET /api/auth/me
-// @access  Private
-exports.getMe = async (req, res, next) => {
+// @desc    Refresh Access Token
+// @route   POST /api/auth/refresh
+exports.refreshToken = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
-    res.json(user);
+    const token = getRefreshToken(req);
+    if (!token) {
+      return res.status(401).json({ message: 'Refresh token not found' });
+    }
+
+    let decoded;
+    try {
+      decoded = jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== token) {
+      return res.status(401).json({ message: 'Token is invalid or revoked' });
+    }
+
+    // Generate new pair
+    const newAccessToken = generateAccessToken(user._id);
+    const newRefreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = newRefreshToken;
+    await user.save();
+
+    res.cookie('refreshToken', newRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      token: newAccessToken,
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+      },
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get login history for current user
-// @route   GET /api/auth/security-logs
-// @access  Private
-exports.getSecurityLogs = async (req, res, next) => {
+// @desc    Logout user
+// @route   POST /api/auth/logout
+exports.logout = async (req, res, next) => {
   try {
-    const logs = await LoginHistory.find({ user: req.user.id })
-      .sort({ timestamp: -1 })
-      .limit(20);
-    res.json(logs);
+    const token = getRefreshToken(req);
+    if (token) {
+      const user = await User.findOne({ refreshToken: token });
+      if (user) {
+        user.refreshToken = '';
+        await user.save();
+      }
+    }
+
+    res.clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+
+    res.json({ message: 'Logged out successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify Email OTP
+// @route   POST /api/auth/verify-email
+exports.verifyEmail = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isEmailVerified) {
+      return res.status(400).json({ message: 'Email is already verified' });
+    }
+
+    if (!user.emailVerificationCode || user.emailVerificationCode !== code) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (user.emailVerificationExpires < new Date()) {
+      return res.status(400).json({ message: 'Verification code has expired' });
+    }
+
+    user.isEmailVerified = true;
+    user.emailVerificationCode = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+
+    res.json({
+      message: 'Email verified successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify Phone OTP
+// @route   POST /api/auth/verify-phone
+exports.verifyPhone = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isPhoneVerified) {
+      return res.status(400).json({ message: 'Phone number is already verified' });
+    }
+
+    if (!user.phoneVerificationCode || user.phoneVerificationCode !== code) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (user.phoneVerificationExpires < new Date()) {
+      return res.status(400).json({ message: 'Verification code has expired' });
+    }
+
+    user.isPhoneVerified = true;
+    user.phoneVerificationCode = undefined;
+    user.phoneVerificationExpires = undefined;
+    await user.save();
+
+    res.json({
+      message: 'Phone number verified successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Resend Email OTP
+// @route   POST /api/auth/resend-email
+exports.resendEmailCode = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const code = generateOTP();
+    user.emailVerificationCode = code;
+    user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    console.log(`[DEV ONLY] Resent Email OTP: ${code}`);
+
+    res.json({
+      message: 'Verification code sent to your email',
+      _devEmailOtp: code,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Resend Phone OTP
+// @route   POST /api/auth/resend-phone
+exports.resendPhoneCode = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const code = generateOTP();
+    user.phoneVerificationCode = code;
+    user.phoneVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
+    await user.save();
+
+    console.log(`[DEV ONLY] Resent SMS OTP: ${code}`);
+
+    res.json({
+      message: 'Verification code sent via SMS',
+      _devPhoneOtp: code,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update Contact Details
+// @route   POST /api/auth/update-contacts
+exports.updateVerificationContacts = async (req, res, next) => {
+  try {
+    const { email, phone } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if new details belong to someone else
+    const filter = [];
+    if (email && email !== user.email) filter.push({ email });
+    if (phone && phone !== user.phone) filter.push({ phone });
+
+    if (filter.length > 0) {
+      const exists = await User.findOne({ $or: filter, _id: { $ne: user._id } });
+      if (exists) {
+        return res.status(400).json({ message: 'Email or phone number already in use' });
+      }
+    }
+
+    const devOtp = {};
+    const expiry = new Date(Date.now() + 15 * 60 * 1000);
+
+    if (email && email !== user.email) {
+      user.email = email;
+      user.isEmailVerified = false;
+      user.emailVerificationCode = generateOTP();
+      user.emailVerificationExpires = expiry;
+      devOtp.emailOtp = user.emailVerificationCode;
+    }
+
+    if (phone && phone !== user.phone) {
+      user.phone = phone;
+      user.isPhoneVerified = false;
+      user.phoneVerificationCode = generateOTP();
+      user.phoneVerificationExpires = expiry;
+      devOtp.phoneOtp = user.phoneVerificationCode;
+    }
+
+    await user.save();
+
+    res.json({
+      message: 'Contact details updated successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+      },
+      _devEmailOtp: devOtp.emailOtp,
+      _devPhoneOtp: devOtp.phoneOtp,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get logged in user profile
+// @route   GET /api/auth/me
+exports.getMe = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user.id);
+    res.json(user);
   } catch (error) {
     next(error);
   }

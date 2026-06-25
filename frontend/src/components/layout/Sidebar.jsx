@@ -1,15 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import {
-  Rss,
-  HelpCircle,
-  Coins,
-  Crown,
-  ShieldCheck,
-  LayoutDashboard,
-  UserCheck,
-} from 'lucide-react';
+import { Rss } from 'lucide-react';
 
 const Sidebar = () => {
   const { user } = useSelector((state) => state.auth);
@@ -18,22 +10,10 @@ const Sidebar = () => {
 
   const links = [
     { to: '/', label: 'Social Feed', icon: Rss },
-    { to: '/qa', label: 'Questions Board', icon: HelpCircle },
-    { to: '/transfer', label: 'Points Transfer', icon: Coins },
-    { to: '/subscriptions', label: 'Premium Sub', icon: Crown },
-    { to: '/security', label: 'Security Center', icon: ShieldCheck },
   ];
 
-  if (user.role === 'admin') {
-    links.push({
-      to: '/admin',
-      label: 'Admin Dashboard',
-      icon: LayoutDashboard,
-    });
-  }
-
   return (
-    <aside className="w-full md:w-64 flex-shrink-0 bg-white dark:bg-darkcard border-r border-slate-100 dark:border-darkborder min-h-[calc(100vh-4rem)] p-4 flex flex-col justify-between transition-colors duration-200">
+    <aside className="w-full md:w-64 flex-shrink-0 bg-white dark:bg-darkcard border-r border-slate-250 dark:border-darkborder min-h-[calc(100vh-4rem)] p-4 flex flex-col justify-between transition-colors duration-200">
       <div className="space-y-1">
         <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 px-3 mb-2">
           Navigation
@@ -62,7 +42,7 @@ const Sidebar = () => {
       <div className="pt-4 border-t border-slate-100 dark:border-darkborder mt-4">
         <div className="bg-slate-50 dark:bg-darkbg/40 p-3 rounded-xl flex flex-col gap-1 border border-slate-100 dark:border-darkborder/50">
           <div className="flex items-center gap-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
             <span className="text-xs text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
               Connected Profile
             </span>

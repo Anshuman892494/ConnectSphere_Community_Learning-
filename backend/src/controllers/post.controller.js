@@ -4,6 +4,7 @@ const User = require('../models/User');
 // @desc    Create a new post
 // @route   POST /api/posts
 // @access  Private
+// @desc    Create a new post
 exports.createPost = async (req, res, next) => {
   try {
     const { type, mediaUrl, caption } = req.body;
@@ -15,14 +16,9 @@ exports.createPost = async (req, res, next) => {
       caption,
     });
 
-    // Reward points for posting
-    const user = await User.findById(req.user.id);
-    user.points += 5;
-    await user.save();
-
     const populatedPost = await Post.findById(post._id).populate(
       'user',
-      'username avatar points reputation'
+      'username avatar'
     );
 
     res.status(201).json(populatedPost);
@@ -38,7 +34,7 @@ exports.getPosts = async (req, res, next) => {
   try {
     const posts = await Post.find({})
       .sort({ createdAt: -1 })
-      .populate('user', 'username avatar points reputation')
+      .populate('user', 'username avatar')
       .populate('comments.user', 'username avatar');
 
     res.json(posts);
@@ -95,10 +91,36 @@ exports.addComment = async (req, res, next) => {
     await post.save();
 
     const updatedPost = await Post.findById(post._id)
-      .populate('user', 'username avatar points reputation')
+      .populate('user', 'username avatar')
       .populate('comments.user', 'username avatar');
 
     res.json(updatedPost);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Delete a post
+// @route   DELETE /api/posts/:id
+// @access  Private
+exports.deletePost = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if user is the post owner OR is an admin
+    const isOwner = post.user.toString() === req.user.id;
+    const isAdmin = req.user.role === 'admin';
+
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Not authorized to delete this post' });
+    }
+
+    await post.deleteOne();
+    res.json({ message: 'Post removed successfully' });
   } catch (error) {
     next(error);
   }

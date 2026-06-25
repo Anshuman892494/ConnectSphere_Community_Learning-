@@ -1,10 +1,10 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sun, Moon, LogOut, ShieldAlert, Award, Database } from 'lucide-react';
+import { Sun, Moon, LogOut } from 'lucide-react';
 import { toggleTheme } from '../../store/themeSlice';
 import { logout } from '../../store/authSlice';
-import AppAvatar from '../common/AppAvatar';
+import API from '../../services/api';
 
 const Navbar = () => {
   const { user } = useSelector((state) => state.auth);
@@ -12,7 +12,12 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await API.post('/auth/logout');
+    } catch (e) {
+      // ignore
+    }
     dispatch(logout());
     navigate('/login');
   };
@@ -29,20 +34,6 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* User points & reputation badges */}
-            {user && (
-              <div className="hidden md:flex items-center gap-2">
-                <div className="flex items-center gap-1 bg-amber-50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-xl text-xs font-bold border border-amber-200/50 dark:border-amber-950/40">
-                  <Award size={14} />
-                  <span>{user.points} XP</span>
-                </div>
-                <div className="flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 px-3 py-1 rounded-xl text-xs font-bold border border-emerald-200/50 dark:border-emerald-950/40">
-                  <Database size={14} />
-                  <span>{user.reputation} REP</span>
-                </div>
-              </div>
-            )}
-
             {/* Dark Mode toggle */}
             <button
               onClick={() => dispatch(toggleTheme())}
@@ -54,21 +45,26 @@ const Navbar = () => {
 
             {user ? (
               <div className="flex items-center gap-3">
-                <Link to={`/profile/${user._id}`} className="flex items-center gap-2">
-                  <AppAvatar
-                    name={user.username}
-                    src={user.avatar}
-                    size="sm"
-                    isPremium={user.subscription?.status === 'premium'}
-                  />
+                <div className="flex items-center gap-2">
+                  {user.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.username}
+                      className="h-8 w-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-8 w-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm uppercase">
+                      {user.username.charAt(0)}
+                    </div>
+                  )}
                   <span className="hidden sm:inline text-sm font-semibold text-slate-700 dark:text-slate-300">
                     {user.username}
                   </span>
-                </Link>
+                </div>
 
                 <button
                   onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all"
+                  className="p-2 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
                   title="Logout"
                 >
                   <LogOut size={18} />
