@@ -22,6 +22,41 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const handleToggleTheme = (event) => {
+    if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      dispatch(toggleTheme());
+      return;
+    }
+
+    const x = event.clientX;
+    const y = event.clientY;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(() => {
+      dispatch(toggleTheme());
+    });
+
+    transition.ready.then(() => {
+      const clipPath = [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(${endRadius}px at ${x}px ${y}px)`
+      ];
+      document.documentElement.animate(
+        {
+          clipPath: clipPath,
+        },
+        {
+          duration: 450,
+          easing: 'ease-out',
+          pseudoElement: '::view-transition-new(root)',
+        }
+      );
+    });
+  };
+
   return (
     <nav className="sticky top-0 z-40 bg-white border-b border-slate-100 dark:bg-darkcard dark:border-darkborder transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,7 +71,7 @@ const Navbar = () => {
           <div className="flex items-center gap-4">
             {/* Dark Mode toggle */}
             <button
-              onClick={() => dispatch(toggleTheme())}
+              onClick={handleToggleTheme}
               className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
               aria-label="Toggle Dark Mode"
             >
