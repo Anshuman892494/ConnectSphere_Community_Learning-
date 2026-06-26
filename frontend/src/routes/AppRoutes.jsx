@@ -9,22 +9,18 @@ import Feed from '../pages/Feed';
 import Verify from '../pages/Verify';
 
 // Layout Components
-import Navbar from '../components/layout/Navbar';
 import Sidebar from '../components/layout/Sidebar';
 import PageContainer from '../components/layout/PageContainer';
 
 const DashboardLayout = () => {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-darkbg transition-colors duration-200">
-      <Navbar />
-      <div className="flex flex-col md:flex-row">
-        <Sidebar />
-        <main className="flex-1 overflow-x-hidden">
-          <PageContainer>
-            <Outlet />
-          </PageContainer>
-        </main>
-      </div>
+    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-darkbg transition-colors duration-200">
+      <Sidebar />
+      <main className="flex-1 h-screen overflow-y-auto">
+        <PageContainer>
+          <Outlet />
+        </PageContainer>
+      </main>
     </div>
   );
 };
