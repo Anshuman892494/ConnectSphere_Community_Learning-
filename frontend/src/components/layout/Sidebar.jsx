@@ -62,7 +62,7 @@ const Sidebar = () => {
           {!isCollapsed ? (
             <>
               <NavLink to="/" className="flex items-center gap-2 text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">
-                <span className="text-2xl">🌐</span>
+                <img src="/logo.png" alt="ConnectSphere Logo" className="w-8 h-8 rounded-lg object-cover" />
                 ConnectSphere
               </NavLink>
               <button 
@@ -75,7 +75,13 @@ const Sidebar = () => {
             </>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <span className="text-2xl cursor-pointer" title="ConnectSphere" onClick={() => setIsCollapsed(false)}>🌐</span>
+              <img 
+                src="/logo.png" 
+                alt="ConnectSphere Logo" 
+                className="w-8 h-8 rounded-lg object-cover cursor-pointer hover:scale-105 transition-transform" 
+                title="ConnectSphere" 
+                onClick={() => setIsCollapsed(false)} 
+              />
               <button 
                 onClick={() => setIsCollapsed(false)}
                 className="p-1.5 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
