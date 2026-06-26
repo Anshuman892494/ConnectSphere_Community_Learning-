@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendOTPEmail } = require('../utils/sendEmail');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'connectsphere_jwt_secret_token_key_12345';
 
@@ -40,9 +41,12 @@ exports.register = async (req, res, next) => {
     const { username, email, phone, password } = req.body;
 
     // Check if username, email, or phone already exists
-    const userExists = await User.findOne({
-      $or: [{ email }, { username }, { phone: phone || null }],
-    });
+    const orConditions = [{ email }, { username }];
+    if (phone) {
+      orConditions.push({ phone });
+    }
+
+    const userExists = await User.findOne({ $or: orConditions });
     if (userExists) {
       return res.status(400).json({ message: 'Username, email, or phone number already registered' });
     }
@@ -60,7 +64,7 @@ exports.register = async (req, res, next) => {
     const user = await User.create({
       username,
       email,
-      phone,
+      phone: phone || undefined,
       password,
       role,
       emailVerificationCode: emailOtp,
@@ -70,6 +74,9 @@ exports.register = async (req, res, next) => {
       isEmailVerified: false,
       isPhoneVerified: false,
     });
+
+    // Send email verification OTP
+    await sendOTPEmail(email, emailOtp, username);
 
     // Print OTPs to server console for testing
     console.log('\n=========================================');
@@ -344,6 +351,9 @@ exports.resendEmailCode = async (req, res, next) => {
     user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
+    // Send email verification OTP
+    await sendOTPEmail(user.email, code, user.username);
+
     console.log(`[DEV ONLY] Resent Email OTP: ${code}`);
 
     res.json({
@@ -405,6 +415,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
 
     const devOtp = {};
     const expiry = new Date(Date.now() + 15 * 60 * 1000);
+    let emailChanged = false;
 
     if (email && email !== user.email) {
       user.email = email;
@@ -412,6 +423,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
       user.emailVerificationCode = generateOTP();
       user.emailVerificationExpires = expiry;
       devOtp.emailOtp = user.emailVerificationCode;
+      emailChanged = true;
     }
 
     if (phone && phone !== user.phone) {
@@ -423,6 +435,11 @@ exports.updateVerificationContacts = async (req, res, next) => {
     }
 
     await user.save();
+
+    // Send email verification OTP if updated
+    if (emailChanged) {
+      await sendOTPEmail(user.email, user.emailVerificationCode, user.username);
+    }
 
     res.json({
       message: 'Contact details updated successfully',
@@ -447,7 +464,9 @@ exports.updateVerificationContacts = async (req, res, next) => {
 // @route   GET /api/auth/me
 exports.getMe = async (req, res, next) => {
   try {
-    const user = await User.findById(req.user.id);
+    const user = await User.findById(req.user.id).select(
+      'username email phone role isEmailVerified isPhoneVerified avatar bio createdAt'
+    );
     res.json(user);
   } catch (error) {
     next(error);

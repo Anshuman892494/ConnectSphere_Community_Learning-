@@ -22,6 +22,7 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  // Dark mode toggle with view transition animation
   const handleToggleTheme = (event) => {
     if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       dispatch(toggleTheme());
