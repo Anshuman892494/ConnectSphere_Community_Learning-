@@ -7,6 +7,8 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Feed from '../pages/Feed';
 import Verify from '../pages/Verify';
+import ForgotPassword from '../pages/ForgotPassword';
+import Settings from '../pages/Settings';
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
@@ -31,6 +33,7 @@ const AppRoutes = () => {
       {/* Public Pages */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
       {/* Verification page (accessible only to logged in but unverified users) */}
       <Route element={<ProtectedRoute allowUnverified={true} />}>
@@ -42,6 +45,7 @@ const AppRoutes = () => {
         <Route element={<DashboardLayout />}>
           {/* Main User Dashboard / Feed */}
           <Route path="/" element={<Feed />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Route>
 

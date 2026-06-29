@@ -111,7 +111,7 @@ const Login = () => {
               )}
             </div>
 
-            {/* Remember Me */}
+            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer select-none">
                 <input
@@ -124,6 +124,12 @@ const Login = () => {
                   Remember Me
                 </span>
               </label>
+              <Link
+                to="/forgot-password"
+                className="text-xs font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400"
+              >
+                Forgot Password?
+              </Link>
             </div>
 
             {/* Error Message */}

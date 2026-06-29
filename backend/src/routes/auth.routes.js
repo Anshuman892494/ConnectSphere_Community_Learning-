@@ -11,6 +11,8 @@ const {
   resendEmailCode,
   resendPhoneCode,
   updateVerificationContacts,
+  forgotPassword,
+  updatePassword,
 } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth');
 
@@ -19,6 +21,7 @@ router.post('/register', register);
 router.post('/login', login);
 router.post('/logout', logout);
 router.post('/refresh', refreshToken);
+router.post('/forgot-password', forgotPassword);
 
 // Protected routes (requires valid access token)
 router.get('/me', protect, getMe);
@@ -27,5 +30,6 @@ router.post('/verify-phone', protect, verifyPhone);
 router.post('/resend-email', protect, resendEmailCode);
 router.post('/resend-phone', protect, resendPhoneCode);
 router.post('/update-contacts', protect, updateVerificationContacts);
+router.put('/update-password', protect, updatePassword);
 
 module.exports = router;

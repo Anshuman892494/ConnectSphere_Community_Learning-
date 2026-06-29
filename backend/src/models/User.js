@@ -72,6 +72,9 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
+    lastForgotPasswordRequest: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

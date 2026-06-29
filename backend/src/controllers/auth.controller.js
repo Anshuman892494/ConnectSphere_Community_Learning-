@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { sendOTPEmail } = require('../utils/sendEmail');
+const { sendOTPEmail, sendPasswordResetEmail } = require('../utils/sendEmail');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'connectsphere_jwt_secret_token_key_12345';
 
@@ -468,6 +468,108 @@ exports.getMe = async (req, res, next) => {
       'username email phone role isEmailVerified isPhoneVerified avatar bio createdAt'
     );
     res.json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Forgot Password - Reset password with email/phone
+// @route   POST /api/auth/forgot-password
+// @access  Public
+exports.forgotPassword = async (req, res, next) => {
+  try {
+    const { emailOrPhone } = req.body;
+
+    if (!emailOrPhone) {
+      return res.status(400).json({ message: 'Please provide registered email address or phone number' });
+    }
+
+    // Search for user by email or phone
+    const user = await User.findOne({
+      $or: [
+        { email: emailOrPhone },
+        { phone: emailOrPhone }
+      ]
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'No user found with this email or phone number' });
+    }
+
+    // Rate Limit Check: once per day (24 hours check)
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    if (user.lastForgotPasswordRequest && user.lastForgotPasswordRequest > oneDayAgo) {
+      return res.status(400).json({ message: 'You can use this option only one time per day.' });
+    }
+
+    // Generate random password: uppercase and lowercase letters only
+    const generateLettersOnlyPassword = (length = 10) => {
+      const letters = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      let result = '';
+      for (let i = 0; i < length; i++) {
+        result += letters.charAt(Math.floor(Math.random() * letters.length));
+      }
+      return result;
+    };
+
+    const tempPassword = generateLettersOnlyPassword(10);
+
+    // Save user password (which will be automatically hashed by pre-save hook)
+    user.password = tempPassword;
+    user.lastForgotPasswordRequest = new Date();
+    await user.save();
+
+    // Trigger email send if user has email
+    if (user.email) {
+      await sendPasswordResetEmail(user.email, tempPassword, user.username);
+    }
+
+    // Log the generated password to server console for testing/verification
+    console.log('\n=========================================');
+    console.log(`[PASSWORD RESET] For user: ${user.username}`);
+    console.log(`New generated password: ${tempPassword}`);
+    console.log('=========================================\n');
+
+    res.json({
+      message: 'Your password has been successfully reset. The new password has been sent to your registered email/phone number.',
+      tempPassword, // Include for dev-testing convenience in the UI
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Update Password
+// @route   PUT /api/auth/update-password
+// @access  Private
+exports.updatePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Please provide current and new passwords' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: 'New password must be at least 6 characters' });
+    }
+
+    const user = await User.findById(req.user.id).select('+password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if current password matches
+    const isMatch = await user.matchPassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password does not match' });
+    }
+
+    // Set new password (will be hashed automatically by pre-save hook)
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
   } catch (error) {
     next(error);
   }
