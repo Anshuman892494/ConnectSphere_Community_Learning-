@@ -75,6 +75,20 @@ const UserSchema = new mongoose.Schema(
     lastForgotPasswordRequest: {
       type: Date,
     },
+    language: {
+      type: String,
+      enum: ['en', 'es', 'hi', 'pt', 'zh', 'fr'],
+      default: 'en',
+    },
+    tempLanguageSwapCode: {
+      type: String,
+    },
+    tempLanguageSwapExpires: {
+      type: Date,
+    },
+    tempLanguageSwapTarget: {
+      type: String,
+    },
   },
   {
     timestamps: true,

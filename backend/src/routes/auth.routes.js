@@ -13,6 +13,8 @@ const {
   updateVerificationContacts,
   forgotPassword,
   updatePassword,
+  requestLanguageChange,
+  verifyLanguageChange,
 } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth');
 
@@ -31,5 +33,7 @@ router.post('/resend-email', protect, resendEmailCode);
 router.post('/resend-phone', protect, resendPhoneCode);
 router.post('/update-contacts', protect, updateVerificationContacts);
 router.put('/update-password', protect, updatePassword);
+router.post('/language/request', protect, requestLanguageChange);
+router.post('/language/verify', protect, verifyLanguageChange);
 
 module.exports = router;

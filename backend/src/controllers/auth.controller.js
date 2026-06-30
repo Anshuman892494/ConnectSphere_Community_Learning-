@@ -109,6 +109,7 @@ exports.register = async (req, res, next) => {
       role: user.role,
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
+      language: user.language,
       token: accessToken,
       _devEmailOtp: emailOtp,
       _devPhoneOtp: phoneOtp,
@@ -163,6 +164,7 @@ exports.login = async (req, res, next) => {
       role: user.role,
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
+      language: user.language,
       token: accessToken,
     });
   } catch (error) {
@@ -215,6 +217,7 @@ exports.refreshToken = async (req, res, next) => {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
+        language: user.language,
       },
     });
   } catch (error) {
@@ -285,6 +288,7 @@ exports.verifyEmail = async (req, res, next) => {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
+        language: user.language,
       },
     });
   } catch (error) {
@@ -330,6 +334,7 @@ exports.verifyPhone = async (req, res, next) => {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
+        language: user.language,
       },
     });
   } catch (error) {
@@ -451,6 +456,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
+        language: user.language,
       },
       _devEmailOtp: devOtp.emailOtp,
       _devPhoneOtp: devOtp.phoneOtp,
@@ -465,7 +471,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
 exports.getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'username email phone role isEmailVerified isPhoneVerified avatar bio createdAt'
+      'username email phone role isEmailVerified isPhoneVerified avatar bio language createdAt'
     );
     res.json(user);
   } catch (error) {
@@ -574,3 +580,96 @@ exports.updatePassword = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Request Language Change OTP
+// @route   POST /api/auth/language/request
+// @access  Private
+exports.requestLanguageChange = async (req, res, next) => {
+  try {
+    const { language } = req.body;
+    const supportedLanguages = ['en', 'es', 'hi', 'pt', 'zh', 'fr'];
+
+    if (!language || !supportedLanguages.includes(language)) {
+      return res.status(400).json({ message: 'Please provide a valid supported language' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Generate code
+    const otpCode = generateOTP();
+    user.tempLanguageSwapCode = otpCode;
+    user.tempLanguageSwapExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+    user.tempLanguageSwapTarget = language;
+    await user.save();
+
+    if (language === 'fr') {
+      // Send OTP to email
+      await sendOTPEmail(user.email, otpCode, user.username);
+      console.log(`\n[EMAIL GATEWAY] Sent Language Swap OTP to ${user.email} for switching to ${language}: ${otpCode}\n`);
+    } else {
+      // Authenticate via mobile number (send OTP to registered mobile number)
+      if (!user.phone) {
+        return res.status(400).json({ message: 'Please register a mobile number first to change your language settings' });
+      }
+      console.log(`\n=========================================`);
+      console.log(`[SMS GATEWAY] Sent Language Swap OTP to ${user.phone} for switching to ${language}: ${otpCode}`);
+      console.log(`=========================================\n`);
+    }
+
+    res.json({
+      message: `Verification code sent. Code expires in 15 minutes.`,
+      _devOtp: otpCode, // Include for dev-testing convenience
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Verify Language Change OTP and apply
+// @route   POST /api/auth/language/verify
+// @access  Private
+exports.verifyLanguageChange = async (req, res, next) => {
+  try {
+    const { code } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!user.tempLanguageSwapCode || user.tempLanguageSwapCode !== code) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (user.tempLanguageSwapExpires < new Date()) {
+      return res.status(400).json({ message: 'Verification code has expired' });
+    }
+
+    // Apply language update
+    user.language = user.tempLanguageSwapTarget;
+    user.tempLanguageSwapCode = undefined;
+    user.tempLanguageSwapExpires = undefined;
+    user.tempLanguageSwapTarget = undefined;
+    await user.save();
+
+    res.json({
+      message: 'Language updated successfully',
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        phone: user.phone || '',
+        role: user.role,
+        isEmailVerified: user.isEmailVerified,
+        isPhoneVerified: user.isPhoneVerified,
+        language: user.language,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
