@@ -20,9 +20,9 @@ export default {
           800: '#5b21b6',
           900: '#4c1d95',
         },
-        darkbg: '#090d16',
-        darkcard: '#121826',
-        darkborder: '#1f293d',
+        darkbg: '#000000',
+        darkcard: '#121212',
+        darkborder: '#262626',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

@@ -12,10 +12,10 @@ const getInitialTheme = () => {
     return isDark;
   }
   
-  // Default fallback to dark mode (matches our rich aesthetic recommendation!)
-  document.documentElement.classList.add('dark');
-  localStorage.setItem('theme', 'dark');
-  return true;
+  // Default fallback to light mode
+  document.documentElement.classList.remove('dark');
+  localStorage.setItem('theme', 'light');
+  return false;
 };
 
 const initialState = {

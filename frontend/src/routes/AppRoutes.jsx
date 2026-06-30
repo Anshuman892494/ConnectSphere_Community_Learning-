@@ -16,7 +16,7 @@ import PageContainer from '../components/layout/PageContainer';
 
 const DashboardLayout = () => {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-darkbg transition-colors duration-200">
+    <div className="flex h-screen w-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950 transition-colors duration-200">
       <Sidebar />
       <main className="flex-1 h-screen overflow-y-auto">
         <PageContainer>
