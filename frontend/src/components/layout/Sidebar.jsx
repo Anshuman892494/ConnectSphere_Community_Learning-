@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { 
   Home, 
   Search, 
@@ -11,8 +12,11 @@ import {
   LogOut, 
   Sun, 
   Moon, 
+  PlusSquare, 
+  Menu,
   PanelLeftClose, 
-  PanelLeftOpen 
+  PanelLeftOpen,
+  Globe
 } from 'lucide-react';
 import { toggleTheme } from '../../store/themeSlice';
 import { logout } from '../../store/authSlice';
@@ -20,11 +24,25 @@ import API from '../../services/api';
 
 const Sidebar = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  
   const { user } = useSelector((state) => state.auth);
   const { darkMode } = useSelector((state) => state.theme);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const moreMenuRef = useRef(null);
+  const { t } = useLanguage();
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
+        setShowMoreMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   if (!user) return null;
 
@@ -42,50 +60,57 @@ const Sidebar = () => {
     dispatch(toggleTheme());
   };
 
+  const handleCreatePost = () => {
+    window.dispatchEvent(new Event('open-create-post-modal'));
+  };
+
   const navLinks = [
-    { to: '/', label: 'Feed', icon: Home },
-    { to: '/messages', label: 'Messages', icon: MessageSquare },
-    { to: '/team', label: 'Team', icon: Users },
-    { to: '/reports', label: 'Reports', icon: FileText },
-    { to: '/settings', label: 'Settings', icon: Settings },
+    { to: '/', label: t('home'), icon: Home },
+    { to: '/messages', label: t('messages'), icon: MessageSquare },
+    { to: '/team', label: t('team'), icon: Users },
+    { to: '/reports', label: t('reports'), icon: FileText },
   ];
 
   return (
     <aside 
-      className={`h-screen flex-shrink-0 bg-white dark:bg-darkcard border-r border-slate-200 dark:border-darkborder flex flex-col justify-between transition-all duration-300 ease-in-out select-none z-30 ${
-        isCollapsed ? 'w-20 px-3 py-6' : 'w-64 p-6'
+      className={`h-screen flex-shrink-0 bg-white/75 dark:bg-neutral-900/60 border-r border-neutral-200 dark:border-neutral-800/40 flex flex-col justify-between transition-all duration-300 ease-in-out select-none z-30 backdrop-blur-xl ${
+        isCollapsed ? 'w-[72px] px-2 py-6' : 'w-64 p-6'
       }`}
     >
       <div className="flex flex-col gap-6">
         {/* Brand Header */}
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} min-h-[40px]`}>
+        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} min-h-[50px] mb-4`}>
           {!isCollapsed ? (
             <>
-              <NavLink to="/" className="flex items-center gap-2 text-xl font-extrabold text-emerald-600 dark:text-emerald-400 tracking-tight">
-                <img src="/logo.png" alt="ConnectSphere Logo" className="w-8 h-8 rounded-lg object-cover" />
-                ConnectSphere
+              <NavLink to="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center shadow-sm shadow-indigo-500/20 dark:shadow-indigo-500/10 hover:rotate-12 transition-transform duration-350">
+                  <Globe className="text-white w-4 h-4" />
+                </div>
+                <span className="font-sans font-black text-2xl tracking-tight bg-gradient-to-r from-indigo-600 to-sky-500 dark:from-indigo-400 dark:to-sky-400 bg-clip-text text-transparent">
+                  ConnectSphere
+                </span>
               </NavLink>
               <button 
                 onClick={() => setIsCollapsed(true)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
-                title="Hide sidebar"
+                className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-all active:scale-95"
+                title="Collapse sidebar"
               >
                 <PanelLeftClose size={18} />
               </button>
             </>
           ) : (
             <div className="flex flex-col items-center gap-3">
-              <img 
-                src="/logo.png" 
-                alt="ConnectSphere Logo" 
-                className="w-8 h-8 rounded-lg object-cover cursor-pointer hover:scale-105 transition-transform" 
-                title="ConnectSphere" 
-                onClick={() => setIsCollapsed(false)} 
-              />
+              <div 
+                onClick={() => setIsCollapsed(false)}
+                className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center shadow-sm shadow-indigo-500/20 dark:shadow-indigo-500/10 hover:rotate-12 transition-transform duration-350 cursor-pointer"
+                title="Expand"
+              >
+                <Globe className="text-white w-4 h-4" />
+              </div>
               <button 
                 onClick={() => setIsCollapsed(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all active:scale-95"
-                title="Show sidebar"
+                className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-all active:scale-95"
+                title="Expand sidebar"
               >
                 <PanelLeftOpen size={18} />
               </button>
@@ -93,34 +118,8 @@ const Sidebar = () => {
           )}
         </div>
 
-        {/* Search Bar */}
-        {!isCollapsed ? (
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-              <Search size={16} />
-            </div>
-            <input
-              type="text"
-              placeholder="Search..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 text-sm rounded-xl border border-slate-200 dark:border-darkborder bg-slate-50 dark:bg-darkbg text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 transition-all"
-            />
-          </div>
-        ) : (
-          <div className="flex justify-center py-1">
-            <button 
-              onClick={() => setIsCollapsed(false)}
-              className="p-3 rounded-xl text-slate-400 hover:text-slate-650 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              title="Search"
-            >
-              <Search size={20} />
-            </button>
-          </div>
-        )}
-
         {/* Navigation Section */}
-        <nav className="flex flex-col gap-1.5">
+        <nav className="flex flex-col gap-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
             return (
@@ -128,50 +127,90 @@ const Sidebar = () => {
                 key={link.to}
                 to={link.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 cursor-pointer ${
+                  `flex items-center gap-4 px-3 py-3 rounded-xl text-base font-medium transition-all duration-205 cursor-pointer ${
                     isCollapsed ? 'justify-center' : ''
                   } ${
                     isActive
-                      ? 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border-l-4 border-emerald-500 rounded-l-none'
-                      : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200'
+                      ? 'text-neutral-900 dark:text-neutral-100 font-bold bg-neutral-50 dark:bg-neutral-900'
+                      : 'text-neutral-650 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 hover:text-neutral-900 dark:hover:text-neutral-200'
                   }`
                 }
                 title={isCollapsed ? link.label : ''}
               >
-                <Icon size={20} className="transition-transform duration-200 group-hover:scale-110" />
+                <Icon size={24} className="transition-transform duration-200" />
                 {!isCollapsed && <span>{link.label}</span>}
               </NavLink>
             );
           })}
+
+          {/* Custom Create Post Link (Instagram Style) */}
+          <button
+            onClick={handleCreatePost}
+            className={`flex items-center gap-4 px-3 py-3 rounded-xl text-base font-medium transition-all duration-205 cursor-pointer text-neutral-650 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 hover:text-neutral-900 dark:hover:text-neutral-200 ${
+              isCollapsed ? 'justify-center' : 'w-full text-left'
+            }`}
+            title={isCollapsed ? t('createPost') : ''}
+          >
+            <PlusSquare size={24} />
+            {!isCollapsed && <span>{t('create')}</span>}
+          </button>
         </nav>
       </div>
 
       {/* Footer Section */}
-      <div className="flex flex-col gap-4">
-        <hr className="border-slate-100 dark:border-darkborder" />
+      <div className="relative flex flex-col gap-4">
+        {/* More Menu Dropdown */}
+        {showMoreMenu && (
+          <div 
+            ref={moreMenuRef}
+            className={`absolute bottom-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl p-2 z-50 w-56 flex flex-col gap-1 transition-all duration-200 ${
+              isCollapsed ? 'left-2' : 'left-0'
+            }`}
+          >
+            {/* Settings */}
+            <NavLink
+              to="/settings"
+              onClick={() => setShowMoreMenu(false)}
+              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-all"
+            >
+              <Settings size={18} />
+              <span>{t('settings')}</span>
+            </NavLink>
 
-        {/* Switch Appearance (Theme toggle) */}
+            {/* Switch Appearance */}
+            <button
+              onClick={() => {
+                handleToggleTheme();
+              }}
+              className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-all"
+            >
+              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+              <span>{t('switchAppearance')}</span>
+            </button>
+
+            <hr className="border-neutral-100 dark:border-neutral-800 my-1" />
+
+            {/* Log Out */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-medium text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all"
+            >
+              <LogOut size={18} />
+              <span>{t('logout')}</span>
+            </button>
+          </div>
+        )}
+
+        {/* More Button */}
         <button
-          onClick={handleToggleTheme}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-200 transition-all ${
+          onClick={() => setShowMoreMenu(!showMoreMenu)}
+          className={`flex items-center gap-4 px-3 py-3 rounded-xl text-base font-medium text-neutral-655 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 hover:text-neutral-900 dark:hover:text-neutral-200 transition-all ${
             isCollapsed ? 'justify-center' : ''
           }`}
-          title="Switch Appearance"
+          title={t('more')}
         >
-          {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-          {!isCollapsed && <span>Switch appearance</span>}
-        </button>
-
-        {/* Log Out */}
-        <button
-          onClick={handleLogout}
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/10 hover:text-rose-650 transition-all ${
-            isCollapsed ? 'justify-center' : ''
-          }`}
-          title="Log out"
-        >
-          <LogOut size={20} />
-          {!isCollapsed && <span>Log out</span>}
+          <Menu size={24} />
+          {!isCollapsed && <span>{t('more')}</span>}
         </button>
 
         {/* Profile Info block */}
@@ -180,19 +219,19 @@ const Sidebar = () => {
             <img
               src={user.avatar}
               alt={user.username}
-              className="h-9 w-9 rounded-full object-cover border border-slate-200 dark:border-darkborder shadow-sm"
+              className="h-8 w-8 rounded-full object-cover border border-neutral-200 dark:border-neutral-800 shadow-sm"
             />
           ) : (
-            <div className="h-9 w-9 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-sm uppercase shadow-sm">
+            <div className="h-8 w-8 rounded-full bg-neutral-900 text-white dark:bg-neutral-100 dark:text-black flex items-center justify-center font-bold text-sm uppercase shadow-sm">
               {user.username.charAt(0)}
             </div>
           )}
           {!isCollapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-slate-800 dark:text-slate-200 truncate">
+              <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate">
                 {user.username}
               </span>
-              <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+              <span className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
                 {user.role === 'admin' ? 'Administrator' : 'Free plan'}
               </span>
             </div>

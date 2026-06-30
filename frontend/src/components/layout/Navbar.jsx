@@ -1,7 +1,8 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sun, Moon, LogOut } from 'lucide-react';
+import { Sun, Moon, LogOut, Globe } from 'lucide-react';
+import { useLanguage } from '../../contexts/LanguageContext';
 import { toggleTheme } from '../../store/themeSlice';
 import { logout } from '../../store/authSlice';
 import API from '../../services/api';
@@ -11,6 +12,7 @@ const Navbar = () => {
   const { darkMode } = useSelector((state) => state.theme);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleLogout = async () => {
     try {
@@ -63,9 +65,13 @@ const Navbar = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2 text-xl font-extrabold text-primary-600 dark:text-primary-400 tracking-tight">
-              <span className="text-2xl">🌐</span>
-              ConnectSphere
+            <Link to="/" className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center shadow-sm shadow-indigo-500/20 dark:shadow-indigo-500/10 hover:rotate-12 transition-transform duration-350">
+                <Globe className="text-white w-4 h-4" />
+              </div>
+              <span className="font-sans font-black text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-sky-500 dark:from-indigo-400 dark:to-sky-400 bg-clip-text text-transparent">
+                ConnectSphere
+              </span>
             </Link>
           </div>
 
@@ -112,13 +118,13 @@ const Navbar = () => {
                   to="/login"
                   className="text-sm font-semibold text-slate-700 dark:text-slate-300 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
-                  Sign In
+                  {t('login')}
                 </Link>
                 <Link
                   to="/register"
                   className="text-sm font-semibold text-white bg-primary-600 px-4 py-2 rounded-xl hover:bg-primary-700 shadow-md shadow-primary-500/10"
                 >
-                  Sign Up
+                  {t('signup')}
                 </Link>
               </div>
             )}
