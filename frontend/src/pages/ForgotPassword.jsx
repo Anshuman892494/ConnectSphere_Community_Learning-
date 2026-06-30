@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import { toggleTheme } from '../store/themeSlice';
 import { useToast } from '../contexts/ToastContext';
 import API from '../services/api';
+import { Mail, KeyRound, Sun, Moon, ArrowRight, ArrowLeft, Globe, Copy, Check } from 'lucide-react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const ForgotPassword = () => {
   const [emailOrPhone, setEmailOrPhone] = useState('');
@@ -10,8 +14,12 @@ const ForgotPassword = () => {
   const [successMsg, setSuccessMsg] = useState('');
   const [tempPassword, setTempPassword] = useState('');
   const [isCopied, setIsCopied] = useState(false);
-  const { addToast } = useToast();
+  
+  const dispatch = useDispatch();
   const navigate = useNavigate();
+  const { darkMode } = useSelector((state) => state.theme);
+  const { addToast } = useToast();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -50,113 +58,166 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-darkbg flex flex-col justify-center py-12 sm:px-6 lg:px-8 transition-colors duration-200">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <h2 className="text-3xl font-extrabold text-slate-800 dark:text-slate-100 tracking-tight flex justify-center items-center gap-2">
-          <span>🌐</span> ConnectSphere
-        </h2>
-        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-          Reset your password to get back to sharing knowledge
-        </p>
-      </div>
+    <div className="relative min-h-screen overflow-hidden flex flex-col justify-center items-center px-4 bg-neutral-50 dark:bg-neutral-950 text-neutral-800 dark:text-neutral-100 transition-colors duration-500">
+      
+      {/* Background Soft Blobs */}
+      <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-72 h-72 rounded-full bg-indigo-500/20 dark:bg-indigo-600/10 blur-3xl animate-float-slow pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-80 h-80 rounded-full bg-sky-500/15 dark:bg-sky-600/10 blur-3xl animate-float-reverse pointer-events-none" />
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
-        <div className="p-8 shadow bg-white dark:bg-darkcard border border-slate-200 dark:border-darkborder rounded-2xl">
-          <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-6">
-            Forgot Password
+      {/* Theme Toggle Button */}
+      <button
+        onClick={() => dispatch(toggleTheme())}
+        className="absolute top-6 right-6 p-2.5 rounded-full border border-neutral-200 dark:border-neutral-800 bg-white/70 dark:bg-neutral-900/70 text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-all duration-300 backdrop-blur-md cursor-pointer shadow-sm hover:scale-105 active:scale-95 z-10"
+        aria-label="Toggle Theme"
+      >
+        {darkMode ? <Sun size={18} className="text-amber-500 animate-pulse" /> : <Moon size={18} />}
+      </button>
+
+      {/* Main Glass Box */}
+      <div className="w-full max-w-[380px] z-10 animate-fade-in-up duration-500">
+        <div className="glassmorphism p-8 md:p-10 flex flex-col rounded-2xl shadow-xl border border-white/20 dark:border-neutral-800/40">
+          
+          {/* Logo Section */}
+          <div className="flex flex-col items-center mb-6">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center shadow-md shadow-indigo-500/20 dark:shadow-indigo-500/10 mb-3 hover:rotate-12 transition-transform duration-300">
+              <KeyRound className="text-white w-6 h-6" />
+            </div>
+            <h2 className="font-sans font-black text-3xl tracking-tight bg-gradient-to-r from-indigo-600 via-sky-500 to-indigo-600 dark:from-indigo-400 dark:via-sky-400 dark:to-indigo-400 bg-clip-text text-transparent">
+              ConnectSphere
+            </h2>
+            <p className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mt-1">
+              {t('resetPassword')}
+            </p>
+          </div>
+
+          <h3 className="font-semibold text-neutral-800 dark:text-neutral-200 text-sm text-center mb-1">
+            {t('troubleLogin')}
           </h3>
+          <p className="text-center text-xs text-neutral-500 dark:text-neutral-400 mb-6 px-1 leading-relaxed">
+            {t('enterEmailOrPhone')}
+          </p>
 
           {!successMsg ? (
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* Email / Phone Field */}
-              <div className="flex flex-col gap-1.5 w-full">
-                <label className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                  Registered Email Address or Phone Number
-                </label>
+            <form className="w-full space-y-4" onSubmit={handleSubmit}>
+              {/* Email / Phone Field with Floating Label */}
+              <div className="relative group w-full">
+                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-neutral-400 group-focus-within:text-indigo-500 transition-colors duration-200">
+                  <Mail size={16} />
+                </div>
                 <input
                   type="text"
+                  id="emailOrPhone"
                   value={emailOrPhone}
                   onChange={(e) => setEmailOrPhone(e.target.value)}
-                  placeholder="e.g. user@example.com or +919876543210"
+                  placeholder=" "
                   required
-                  className={`w-full px-4 py-2.5 rounded-xl border bg-white text-slate-800 dark:bg-darkbg dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500/50 ${
-                    errorMsg
-                      ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-500/30'
-                      : 'border-slate-200 dark:border-darkborder focus:border-primary-500'
-                  }`}
+                  className={`w-full pl-10 pr-4 pt-5 pb-1.5 text-xs rounded-xl border bg-neutral-50/50 dark:bg-neutral-900/40 text-neutral-800 dark:text-neutral-100 transition-all duration-300 focus:outline-none focus:bg-white dark:focus:bg-neutral-950 focus:ring-2 ${
+                    errorMsg 
+                      ? 'border-rose-500 focus:ring-rose-500/20' 
+                      : 'border-neutral-200 dark:border-neutral-800/80 focus:border-indigo-500 focus:ring-indigo-500/20'
+                  } peer`}
                 />
+                <label
+                  htmlFor="emailOrPhone"
+                  className={`absolute left-10 text-neutral-400 pointer-events-none transition-all duration-300 origin-left 
+                    peer-placeholder-shown:text-xs peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 
+                    peer-focus:text-[10px] peer-focus:top-1.5 peer-focus:translate-y-0 peer-focus:text-indigo-500 
+                    ${emailOrPhone ? 'text-[10px] top-1.5 translate-y-0' : ''}`}
+                >
+                  {t('email')} / {t('phone')}
+                </label>
               </div>
 
               {/* Error Message */}
               {errorMsg && (
-                <div className="p-3 bg-rose-50/50 dark:bg-rose-950/20 text-rose-500 rounded-xl text-xs font-semibold border border-rose-100 dark:border-rose-950/30">
-                  ⚠️ {errorMsg}
+                <div className="p-2.5 bg-rose-50/50 dark:bg-rose-950/20 text-rose-500 text-[11px] font-semibold border border-rose-100 dark:border-rose-950/30 text-center rounded-xl animate-shake">
+                  {errorMsg}
                 </div>
               )}
 
               {/* Submit Button */}
-              <div>
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  {isLoading ? 'Resetting Password...' : 'Generate New Password'}
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={isLoading || !emailOrPhone.trim()}
+                className="w-full py-3 bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg hover:shadow-indigo-500/20 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none mt-6 flex items-center justify-center gap-2 cursor-pointer"
+              >
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>{t('generatePassword')}</span>
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
             </form>
           ) : (
-            <div className="space-y-6">
+            <div className="w-full space-y-5 text-center">
               {/* Success Message */}
-              <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm font-semibold border border-emerald-100 dark:border-emerald-950/30">
-                ✓ {successMsg}
+              <div className="p-3.5 bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-semibold border border-emerald-100 dark:border-emerald-950/30">
+                {successMsg}
               </div>
 
-              {/* Dev Mode Output */}
+              {/* Developer Assistant Mode */}
               {tempPassword && (
-                <div className="p-5 bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-950/30 rounded-xl space-y-3">
-                  <div className="text-xs font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider">
-                    🛠️ Developer Mode Assistant
+                <div className="p-4 bg-indigo-50/40 dark:bg-indigo-950/25 border border-indigo-100/60 dark:border-indigo-950/40 rounded-xl text-left space-y-2">
+                  <div className="text-[10px] font-bold text-indigo-500 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <Globe size={12} />
+                    <span>Developer Mode Assistant</span>
                   </div>
-                  <div className="text-xs text-slate-600 dark:text-slate-400">
-                    Since you are in developer mode, here is your generated letters-only password:
+                  <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Your generated temporary password:
                   </div>
-                  <div className="flex items-center justify-between bg-white dark:bg-darkbg px-4 py-2.5 rounded-lg border border-slate-200 dark:border-darkborder">
-                    <span className="font-mono font-bold text-lg tracking-wider text-slate-800 dark:text-slate-100">
+                  <div className="flex items-center justify-between bg-white/80 dark:bg-neutral-900/60 px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800">
+                    <span className="font-mono font-bold text-sm tracking-wider text-neutral-900 dark:text-neutral-100">
                       {tempPassword}
                     </span>
                     <button
                       onClick={handleCopy}
-                      className="px-3 py-1 bg-indigo-600 text-white rounded-md text-xs font-semibold hover:bg-indigo-700 transition duration-200"
+                      className="p-1 text-indigo-600 dark:text-indigo-450 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded transition-colors cursor-pointer"
+                      title="Copy to clipboard"
                     >
-                      {isCopied ? 'Copied!' : 'Copy'}
+                      {isCopied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
                     </button>
                   </div>
                 </div>
               )}
 
-              <div>
-                <button
-                  onClick={() => navigate('/login')}
-                  className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-xl font-semibold transition duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  Go to Sign In
-                </button>
-              </div>
+              <button
+                onClick={() => navigate('/login')}
+                className="w-full py-3 bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white rounded-xl font-semibold text-sm transition-all duration-300 hover:shadow-lg active:scale-[0.98] cursor-pointer"
+              >
+                {t('backToLogin')}
+              </button>
             </div>
           )}
 
-          <div className="mt-6 text-center">
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Remembered your password?{' '}
-              <Link
-                to="/login"
-                className="font-bold text-primary-600 hover:text-primary-700 dark:text-primary-400"
-              >
-                Sign In
-              </Link>
-            </p>
+          {/* Divider */}
+          <div className="flex items-center w-full my-6">
+            <div className="flex-1 border-t border-neutral-200 dark:border-neutral-800/80" />
+            <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              OR
+            </span>
+            <div className="flex-1 border-t border-neutral-200 dark:border-neutral-800/80" />
           </div>
+
+          {/* Footer Navigation */}
+          <div className="flex flex-col gap-2.5 items-center text-xs">
+            <Link
+              to="/register"
+              className="text-neutral-500 dark:text-neutral-400 hover:text-indigo-500 dark:hover:text-indigo-400 hover:underline transition-colors"
+            >
+              {t('signup')}
+            </Link>
+            <Link
+              to="/login"
+              className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 dark:hover:text-indigo-350 hover:underline flex items-center gap-1 transition-colors"
+            >
+              <ArrowLeft size={12} />
+              <span>{t('backToLogin')}</span>
+            </Link>
+          </div>
+
         </div>
       </div>
     </div>
@@ -164,3 +225,4 @@ const ForgotPassword = () => {
 };
 
 export default ForgotPassword;
+
