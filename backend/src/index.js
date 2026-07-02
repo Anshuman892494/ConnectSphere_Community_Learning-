@@ -26,10 +26,12 @@ app.use((req, res, next) => {
 // Import routes
 const authRoutes = require('./routes/auth.routes');
 const postRoutes = require('./routes/post.routes');
+const usersRoutes = require('./routes/users.routes');
 
 // Use routes
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
+app.use('/api/users', usersRoutes);
 
 // Base route
 app.get('/', (req, res) => {
