@@ -13,7 +13,8 @@ const ProtectedRoute = ({ adminOnly = false, allowUnverified = false }) => {
   // Check email and phone verification status
   // Note: if user is not loaded yet but token is present, we wait, or default to verified to avoid blink.
   // But usually user details are saved along with the token in localStorage.
-  const isVerified = user ? (user.isEmailVerified && user.isPhoneVerified) : true;
+  // Only require email verification for dashboard access
+  const isVerified = user ? user.isEmailVerified : true;
 
   if (!isVerified && !allowUnverified) {
     // Redirect unverified users to the verification page

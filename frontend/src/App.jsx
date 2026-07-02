@@ -5,18 +5,24 @@ import store from './store';
 import { ToastProvider } from './contexts/ToastContext';
 import { LanguageProvider } from './contexts/LanguageContext';
 import AppRoutes from './routes/AppRoutes';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 function App() {
+  // Using a fallback so the app doesn't crash if env is missing
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+
   return (
-    <Provider store={store}>
-      <ToastProvider>
-        <LanguageProvider>
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
-        </LanguageProvider>
-      </ToastProvider>
-    </Provider>
+    <GoogleOAuthProvider clientId={clientId}>
+      <Provider store={store}>
+        <ToastProvider>
+          <LanguageProvider>
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </LanguageProvider>
+        </ToastProvider>
+      </Provider>
+    </GoogleOAuthProvider>
   );
 }
 

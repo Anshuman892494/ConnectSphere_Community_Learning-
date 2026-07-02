@@ -356,8 +356,15 @@ const Verify = () => {
             /* Phone Form */
             <form onSubmit={handleVerifyPhone} className="space-y-6">
               {!user?.phone ? (
-                <div className="text-center text-xs p-4 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-500/25">
-                  ⚠️ No phone number registered. Use the update form below to add a phone number.
+                <div className="flex flex-col items-center gap-3 text-center text-xs p-4 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl border border-amber-500/25">
+                  <p>⚠️ No phone number registered. You need to add a phone number to proceed.</p>
+                  <button
+                    type="button"
+                    onClick={() => setShowEditPanel(true)}
+                    className="px-4 py-1.5 bg-amber-500 text-white font-bold rounded-lg hover:bg-amber-600 transition-colors cursor-pointer"
+                  >
+                    Add Phone Number
+                  </button>
                 </div>
               ) : (
                 <>

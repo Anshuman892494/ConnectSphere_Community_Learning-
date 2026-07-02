@@ -14,6 +14,8 @@ import Settings from '../pages/Settings';
 import Sidebar from '../components/layout/Sidebar';
 import PageContainer from '../components/layout/PageContainer';
 
+import PhoneVerificationModal from '../components/common/PhoneVerificationModal';
+
 const DashboardLayout = () => {
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950 transition-colors duration-200">
@@ -21,6 +23,7 @@ const DashboardLayout = () => {
       <main className="flex-1 h-screen overflow-y-auto">
         <PageContainer>
           <Outlet />
+          <PhoneVerificationModal />
         </PageContainer>
       </main>
     </div>

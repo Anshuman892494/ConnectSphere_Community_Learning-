@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import { loginStart, loginSuccess, loginFailure } from '../store/authSlice';
 import { toggleTheme } from '../store/themeSlice';
 import { useToast } from '../contexts/ToastContext';
@@ -28,6 +29,26 @@ const Login = () => {
       addToast('Your session has expired. Please log in again.', 'warning');
     }
   }, [searchParams, addToast]);
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        dispatch(loginStart());
+        const response = await API.post('/auth/google', { token: tokenResponse.access_token });
+        dispatch(loginSuccess(response.data));
+        addToast(`Welcome, ${response.data.username}!`, 'success');
+        navigate('/');
+      } catch (err) {
+        const msg = err.response?.data?.message || 'Google Login failed.';
+        dispatch(loginFailure(msg));
+        addToast(msg, 'error');
+      }
+    },
+    onError: (error) => {
+      console.error('Google Login Failed', error);
+      addToast('Google Login failed. Please try again.', 'error');
+    }
+  });
 
   const validate = () => {
     const tempErrors = {};
@@ -215,7 +236,7 @@ const Login = () => {
           <div className="w-full">
             <button
               type="button"
-              onClick={() => addToast('Google login is not implemented yet', 'info')}
+              onClick={() => handleGoogleLogin()}
               className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800/85 bg-white/50 dark:bg-neutral-900/30 text-xs font-semibold text-neutral-700 dark:text-neutral-350 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 hover:border-neutral-300 dark:hover:border-neutral-700 transition-all duration-200 cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
