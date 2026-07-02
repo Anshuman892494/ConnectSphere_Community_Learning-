@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
-import { Camera, Edit2, MapPin, Calendar, Link as LinkIcon, X } from 'lucide-react';
+import { MapPin, Calendar, Clock, Edit2, X } from 'lucide-react';
 import API from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { updateUser } from '../store/authSlice';
@@ -16,12 +16,12 @@ const Profile = () => {
   const [profileUser, setProfileUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('Profile');
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     avatar: '',
-    coverImage: '',
     bio: ''
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -40,7 +40,6 @@ const Profile = () => {
       setPosts(response.data.posts);
       setEditForm({
         avatar: response.data.user.avatar || '',
-        coverImage: response.data.user.coverImage || '',
         bio: response.data.user.bio || ''
       });
     } catch (err) {
@@ -54,6 +53,7 @@ const Profile = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
+      // Remove coverImage from the API call or just send what we have
       const response = await API.put('/users/profile', editForm);
       setProfileUser((prev) => ({ ...prev, ...response.data }));
       dispatch(updateUser(response.data));
@@ -68,10 +68,13 @@ const Profile = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center max-w-[935px] mx-auto pt-4 relative animate-pulse px-4">
-        <div className="w-full space-y-4">
-          <div className="h-64 bg-neutral-200 dark:bg-neutral-800 rounded-2xl w-full" />
-          <div className="h-24 bg-neutral-200 dark:bg-neutral-800 rounded-2xl w-full" />
+      <div className="max-w-[1100px] mx-auto p-6 animate-pulse">
+        <div className="flex gap-4">
+          <div className="w-[128px] h-[128px] bg-gray-200 rounded" />
+          <div className="flex-1 space-y-4 py-2">
+            <div className="w-1/3 h-8 bg-gray-200 rounded" />
+            <div className="w-1/4 h-4 bg-gray-200 rounded" />
+          </div>
         </div>
       </div>
     );
@@ -79,205 +82,218 @@ const Profile = () => {
 
   if (!profileUser) {
     return (
-      <div className="pt-10">
+      <div className="pt-10 max-w-[1100px] mx-auto">
         <EmptyState title="User not found" message="The user you are looking for does not exist." />
       </div>
     );
   }
 
+  // Calculate mock stats based on posts
+  const reputation = 1 + posts.reduce((acc, p) => acc + (p.likes?.length || 0) * 10, 0);
+  const answers = posts.reduce((acc, p) => acc + (p.comments?.length || 0), 0);
+  const questions = posts.length;
+  const reached = '~' + Math.floor((reputation * 13) / 1000) + 'k';
+
   return (
-    <div className="max-w-[935px] mx-auto pb-10">
-      {/* Cover Image */}
-      <div className="relative h-48 md:h-64 lg:h-80 w-full rounded-b-2xl md:rounded-2xl overflow-hidden bg-gradient-to-r from-indigo-100 to-sky-100 dark:from-indigo-900/30 dark:to-sky-900/30 shadow-sm border-b border-neutral-200 dark:border-neutral-800">
-        {profileUser.coverImage ? (
-          <img src={profileUser.coverImage} alt="Cover" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center opacity-30">
-            <Camera size={48} className="text-indigo-500" />
+    <div className="max-w-[1100px] mx-auto text-[13px] text-gray-800 p-4 sm:p-6 font-sans">
+      
+      {/* Profile Header Block */}
+      <div className="flex flex-col md:flex-row gap-6 mb-6">
+        <div className="w-32 h-32 flex-shrink-0 relative rounded overflow-hidden shadow-sm border border-gray-300 bg-white">
+          {profileUser.avatar ? (
+            <img src={profileUser.avatar} alt={profileUser.username} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-purple-600 text-white flex items-center justify-center text-[48px] font-bold uppercase">
+              {profileUser.username.charAt(0)}
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-[34px] font-medium text-gray-900 leading-tight">
+              {profileUser.username}
+            </h1>
+            {isOwnProfile && (
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="flex items-center gap-1 border border-gray-400 rounded px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors shadow-sm bg-white"
+              >
+                <Edit2 size={14} /> <span className="font-medium text-[12px]">Edit profile</span>
+              </button>
+            )}
           </div>
-        )}
+          
+          <div className="text-[21px] text-gray-600 mb-2 font-medium">
+            {profileUser.role === 'admin' ? 'Community Administrator' : 'Software Developer'}
+          </div>
+
+          <ul className="flex flex-wrap items-center gap-4 text-[13px] text-gray-500">
+            <li className="flex items-center gap-1"><MapPin size={16} /> Earth</li>
+            <li className="flex items-center gap-1"><Calendar size={16} /> Member for {Math.floor(Math.random() * 5) + 1} years, {Math.floor(Math.random() * 11) + 1} months</li>
+            <li className="flex items-center gap-1"><Clock size={16} /> Last seen this week</li>
+          </ul>
+        </div>
       </div>
 
-      {/* Profile Info Section */}
-      <div className="px-4 md:px-8 relative -mt-16 md:-mt-20">
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
-          {/* Avatar and Basic Info */}
-          <div className="flex items-end gap-5">
-            <div className="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-white dark:border-neutral-950 bg-white dark:bg-neutral-900 flex-shrink-0 overflow-hidden shadow-lg relative">
-              {profileUser.avatar ? (
-                <img src={profileUser.avatar} alt={profileUser.username} className="w-full h-full object-cover" />
+      {/* Navigation Pills */}
+      <div className="flex gap-1 mb-6 flex-wrap">
+        {['Profile', 'Activity', 'Saves', 'Settings'].map(tab => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-3 py-1.5 rounded-[100px] font-medium transition-colors ${
+              activeTab === tab
+                ? 'bg-[#F48024] text-white'
+                : 'text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {activeTab === 'Profile' && (
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Column: Stats */}
+          <div className="w-full lg:w-[250px] flex-shrink-0">
+            <h2 className="text-[21px] text-gray-900 mb-2 font-medium">Stats</h2>
+            <div className="border border-gray-300 rounded p-3 bg-white grid grid-cols-2 gap-3 mb-6 shadow-sm">
+              <div className="flex flex-col">
+                <span className="text-[17px] font-medium text-gray-900">{reputation.toLocaleString()}</span>
+                <span className="text-gray-500">reputation</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[17px] font-medium text-gray-900">{reached}</span>
+                <span className="text-gray-500">reached</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[17px] font-medium text-gray-900">{answers}</span>
+                <span className="text-gray-500">answers</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[17px] font-medium text-gray-900">{questions}</span>
+                <span className="text-gray-500">questions</span>
+              </div>
+            </div>
+            
+            <h2 className="text-[21px] text-gray-900 mb-2 font-medium">Top tags</h2>
+            <div className="border border-gray-300 rounded p-3 bg-white shadow-sm flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[#39739D] bg-[#E1ECF4] px-1.5 py-0.5 rounded-[3px] text-[12px] hover:bg-[#D0E3F1] cursor-pointer">javascript</span>
+                <div className="text-gray-500 flex gap-4"><span className="text-gray-900 font-bold">12</span> <span>score</span></div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#39739D] bg-[#E1ECF4] px-1.5 py-0.5 rounded-[3px] text-[12px] hover:bg-[#D0E3F1] cursor-pointer">reactjs</span>
+                <div className="text-gray-500 flex gap-4"><span className="text-gray-900 font-bold">8</span> <span>score</span></div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-[#39739D] bg-[#E1ECF4] px-1.5 py-0.5 rounded-[3px] text-[12px] hover:bg-[#D0E3F1] cursor-pointer">css</span>
+                <div className="text-gray-500 flex gap-4"><span className="text-gray-900 font-bold">5</span> <span>score</span></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: About & Posts */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[21px] text-gray-900 mb-2 font-medium">About</h2>
+            <div className="mb-8 text-[15px] leading-relaxed text-gray-900 whitespace-pre-line">
+              {profileUser.bio ? (
+                profileUser.bio
               ) : (
-                <div className="w-full h-full bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center text-5xl font-black text-white uppercase">
-                  {profileUser.username.charAt(0)}
+                <span className="text-gray-400 italic">
+                  {isOwnProfile ? 'Your about me is currently blank.' : 'Apparently, this user prefers to keep an air of mystery about them.'}
+                </span>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-[21px] text-gray-900 font-medium">Top posts</h2>
+            </div>
+            
+            <div className="border border-gray-300 rounded bg-white shadow-sm overflow-hidden">
+              {posts.length === 0 ? (
+                <div className="p-8 text-center text-gray-500 text-[15px]">
+                  You have not created any posts yet.
+                </div>
+              ) : (
+                <div className="flex flex-col">
+                  {posts.slice(0, 5).map((post, idx) => (
+                    <div key={post._id} className={`flex items-center p-3 hover:bg-gray-50 ${idx !== posts.length - 1 ? 'border-b border-gray-200' : ''}`}>
+                      <div className="w-[48px] flex-shrink-0 text-right pr-3">
+                        <span className={`inline-block px-2 py-1 rounded text-[12px] ${post.likes?.length > 5 ? 'bg-green-600 text-white' : post.likes?.length > 0 ? 'border border-green-600 text-green-700' : 'text-gray-500'}`}>
+                          {post.likes?.length || 0}
+                        </span>
+                      </div>
+                      <Link to="/" className="flex-1 text-[#0074CC] hover:text-[#0A95FF] truncate font-medium">
+                        {post.caption || 'Untitled Post'}
+                      </Link>
+                      <div className="text-gray-500 text-[12px] w-[90px] text-right flex-shrink-0">
+                        {new Date(post.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
-            <div className="pb-2 md:pb-4 hidden md:block">
-              <h1 className="text-2xl md:text-3xl font-black text-neutral-900 dark:text-white drop-shadow-sm">
-                {profileUser.username}
-              </h1>
-              <p className="text-neutral-500 font-bold">@{profileUser.username.toLowerCase()}</p>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 pb-2 md:pb-4">
-            {isOwnProfile ? (
-              <button 
-                onClick={() => setIsEditModalOpen(true)}
-                className="px-5 py-2 bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-900 dark:text-white rounded-xl font-bold text-sm flex items-center gap-2 transition-colors shadow-sm cursor-pointer"
-              >
-                <Edit2 size={16} /> Edit Profile
-              </button>
-            ) : (
-              <button className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-sky-500 hover:from-indigo-600 hover:to-sky-600 text-white rounded-xl font-bold text-sm transition-colors shadow-sm cursor-pointer">
-                Follow
-              </button>
-            )}
           </div>
         </div>
+      )}
 
-        {/* Mobile Name (shows below avatar on small screens) */}
-        <div className="mt-4 md:hidden">
-          <h1 className="text-2xl font-black text-neutral-900 dark:text-white">
-            {profileUser.username}
-          </h1>
-          <p className="text-neutral-500 font-bold">@{profileUser.username.toLowerCase()}</p>
+      {activeTab !== 'Profile' && (
+        <div className="border border-gray-300 rounded p-8 text-center bg-white shadow-sm">
+          <EmptyState title="Not implemented" message={`The ${activeTab} tab is currently under construction.`} />
         </div>
-
-        {/* Bio and Meta */}
-        <div className="mt-6 md:mt-4 max-w-2xl">
-          <p className="text-neutral-800 dark:text-neutral-200 text-[15px] leading-relaxed whitespace-pre-line font-medium">
-            {profileUser.bio || (isOwnProfile ? 'Add a bio to tell people about yourself.' : 'No bio provided.')}
-          </p>
-          
-          <div className="flex flex-wrap items-center gap-4 mt-4 text-xs font-semibold text-neutral-500 dark:text-neutral-450">
-            <div className="flex items-center gap-1.5">
-              <Calendar size={14} /> Joined {new Date(profileUser.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
-            </div>
-            {profileUser.role === 'admin' && (
-              <div className="px-2 py-0.5 rounded text-[10px] uppercase tracking-wider bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                Administrator
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-6 mt-5 text-sm">
-            <div><span className="font-black text-neutral-900 dark:text-white">124</span> <span className="text-neutral-500 font-medium">Following</span></div>
-            <div><span className="font-black text-neutral-900 dark:text-white">10.5K</span> <span className="text-neutral-500 font-medium">Followers</span></div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="mt-10 border-t border-neutral-200 dark:border-neutral-800">
-        <div className="flex gap-8 px-4 md:px-8">
-          <div className="py-4 border-t-2 border-indigo-500 text-neutral-900 dark:text-white font-bold text-sm -mt-[1px]">
-            Posts
-          </div>
-          <div className="py-4 text-neutral-500 font-bold text-sm cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors">
-            Replies
-          </div>
-          <div className="py-4 text-neutral-500 font-bold text-sm cursor-pointer hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors">
-            Media
-          </div>
-        </div>
-      </div>
-
-      {/* Posts Feed */}
-      <div className="px-4 md:px-8 mt-6">
-        {posts.length === 0 ? (
-          <EmptyState title="No Posts Yet" message={`${isOwnProfile ? 'You haven\'t' : `${profileUser.username} hasn't`} posted anything yet.`} />
-        ) : (
-          <div className="grid grid-cols-1 gap-6 max-w-[600px]">
-            {posts.map(post => (
-              <div key={post._id} className="glassmorphism rounded-2xl p-4 border border-white/20 dark:border-neutral-800/40 shadow-sm">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-800 overflow-hidden border border-neutral-200 dark:border-neutral-800">
-                    {post.user?.avatar ? (
-                      <img src={post.user.avatar} alt="avatar" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-sm font-black bg-neutral-800 text-white uppercase">
-                        {post.user?.username?.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <div className="font-black text-sm text-neutral-900 dark:text-white">{post.user?.username}</div>
-                    <div className="text-[11px] font-semibold text-neutral-400">{new Date(post.createdAt).toLocaleDateString()}</div>
-                  </div>
-                </div>
-                {post.type === 'photo' && post.mediaUrl && (
-                  <img src={post.mediaUrl} alt="Post" className="w-full rounded-xl mb-3 max-h-[400px] object-cover border border-neutral-100 dark:border-neutral-800" />
-                )}
-                {post.type === 'video' && post.mediaUrl && (
-                  <video src={post.mediaUrl} controls className="w-full rounded-xl mb-3 max-h-[400px] bg-black border border-neutral-100 dark:border-neutral-800" />
-                )}
-                <p className="text-sm text-neutral-800 dark:text-neutral-200 leading-relaxed font-medium">
-                  {post.caption}
-                </p>
-                <div className="mt-3 pt-3 border-t border-neutral-100 dark:border-neutral-800/50 flex gap-4 text-xs font-bold text-neutral-500">
-                  <span>{post.likes?.length || 0} Likes</span>
-                  <span>{post.comments?.length || 0} Comments</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Edit Profile Modal */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-neutral-900 w-full max-w-[500px] rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-800 flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
-              <h2 className="text-lg font-black text-neutral-900 dark:text-white">Edit Profile</h2>
-              <button onClick={() => setIsEditModalOpen(false)} className="text-neutral-500 hover:text-neutral-900 dark:hover:text-white cursor-pointer transition-colors p-1">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4">
+          <div className="bg-white w-full max-w-[500px] rounded shadow-xl flex flex-col">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#F8F9F9]">
+              <h2 className="text-[21px] font-medium text-gray-900">Edit Profile</h2>
+              <button onClick={() => setIsEditModalOpen(false)} className="text-gray-500 hover:text-gray-900 p-1">
                 <X size={20} />
               </button>
             </div>
-            <form onSubmit={handleSaveProfile} className="p-4 overflow-y-auto flex-1 space-y-5">
+            <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
               
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-neutral-500 uppercase tracking-wider">Cover Image URL</label>
-                <input 
-                  type="text" 
-                  value={editForm.coverImage}
-                  onChange={(e) => setEditForm({...editForm, coverImage: e.target.value})}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-neutral-500 uppercase tracking-wider">Profile Picture URL</label>
+              <div>
+                <label className="block font-bold text-[15px] text-gray-900 mb-1">Profile Image URL</label>
                 <input 
                   type="text" 
                   value={editForm.avatar}
                   onChange={(e) => setEditForm({...editForm, avatar: e.target.value})}
-                  placeholder="https://images.unsplash.com/..."
-                  className="w-full p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  className="w-full border border-gray-300 rounded p-2 focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-black text-neutral-500 uppercase tracking-wider">Bio</label>
+              <div>
+                <label className="block font-bold text-[15px] text-gray-900 mb-1">About Me</label>
                 <textarea 
-                  rows={4}
+                  rows={5}
                   value={editForm.bio}
                   onChange={(e) => setEditForm({...editForm, bio: e.target.value})}
-                  placeholder="Tell us about yourself..."
-                  className="w-full p-3 bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-700 rounded-xl text-sm font-medium text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/50 resize-none"
+                  className="w-full border border-gray-300 rounded p-2 focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
                 />
               </div>
 
-              <button 
-                type="submit"
-                disabled={isSaving}
-                className="w-full py-3.5 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl font-black text-sm hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer shadow-md mt-2"
-              >
-                {isSaving ? 'Saving...' : 'Save Changes'}
-              </button>
+              <div className="flex gap-2 pt-2">
+                <button 
+                  type="submit"
+                  disabled={isSaving}
+                  className="bg-[#0A95FF] hover:bg-[#0074CC] text-white font-bold py-2 px-3 rounded shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50"
+                >
+                  {isSaving ? 'Saving...' : 'Save Profile'}
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="text-[#0074CC] hover:bg-[#E1ECF4] py-2 px-3 rounded font-medium"
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
           </div>
         </div>

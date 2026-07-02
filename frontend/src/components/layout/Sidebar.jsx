@@ -1,246 +1,106 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import { useSelector, useDispatch } from 'react-redux';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { 
-  Home, 
-  Search, 
-  MessageSquare, 
-  Users, 
-  FileText, 
-  Settings, 
-  LogOut, 
-  Sun, 
-  Moon, 
-  PlusSquare, 
-  Menu,
-  PanelLeftClose, 
-  PanelLeftOpen,
-  Globe
-} from 'lucide-react';
-import { toggleTheme } from '../../store/themeSlice';
-import { logout } from '../../store/authSlice';
-import API from '../../services/api';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
+import { Globe } from 'lucide-react';
 
 const Sidebar = () => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  
-  const { user } = useSelector((state) => state.auth);
-  const { darkMode } = useSelector((state) => state.theme);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
-  const moreMenuRef = useRef(null);
-  const { t } = useLanguage();
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target)) {
-        setShowMoreMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  if (!user) return null;
-
-  const handleLogout = async () => {
-    try {
-      await API.post('/auth/logout');
-    } catch (e) {
-      // ignore
-    }
-    dispatch(logout());
-    navigate('/login');
-  };
-
-  const handleToggleTheme = () => {
-    dispatch(toggleTheme());
-  };
-
-  const handleCreatePost = () => {
-    window.dispatchEvent(new Event('open-create-post-modal'));
-  };
-
-  const navLinks = [
-    { to: '/', label: t('home'), icon: Home },
-    { to: '/messages', label: t('messages'), icon: MessageSquare },
-    { to: '/team', label: t('team'), icon: Users },
-    { to: '/reports', label: t('reports'), icon: FileText },
-  ];
-
   return (
-    <aside 
-      className={`h-screen flex-shrink-0 bg-white/75 dark:bg-neutral-900/60 border-r border-neutral-200 dark:border-neutral-800/40 flex flex-col justify-between transition-all duration-300 ease-in-out select-none z-30 backdrop-blur-xl ${
-        isCollapsed ? 'w-[72px] px-2 py-6' : 'w-64 p-6'
-      }`}
-    >
-      <div className="flex flex-col gap-6">
-        {/* Brand Header */}
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} min-h-[50px] mb-4`}>
-          {!isCollapsed ? (
-            <>
-              <NavLink to="/" className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center shadow-sm shadow-indigo-500/20 dark:shadow-indigo-500/10 hover:rotate-12 transition-transform duration-350">
-                  <Globe className="text-white w-4 h-4" />
-                </div>
-                <span className="font-sans font-black text-2xl tracking-tight bg-gradient-to-r from-indigo-600 to-sky-500 dark:from-indigo-400 dark:to-sky-400 bg-clip-text text-transparent">
-                  ConnectSphere
-                </span>
-              </NavLink>
-              <button 
-                onClick={() => setIsCollapsed(true)}
-                className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-all active:scale-95"
-                title="Collapse sidebar"
-              >
-                <PanelLeftClose size={18} />
-              </button>
-            </>
-          ) : (
-            <div className="flex flex-col items-center gap-3">
-              <div 
-                onClick={() => setIsCollapsed(false)}
-                className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center shadow-sm shadow-indigo-500/20 dark:shadow-indigo-500/10 hover:rotate-12 transition-transform duration-350 cursor-pointer"
-                title="Expand"
-              >
-                <Globe className="text-white w-4 h-4" />
-              </div>
-              <button 
-                onClick={() => setIsCollapsed(false)}
-                className="p-1.5 rounded-xl text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-all active:scale-95"
-                title="Expand sidebar"
-              >
-                <PanelLeftOpen size={18} />
-              </button>
-            </div>
-          )}
+    <aside className="hidden md:block w-[164px] flex-shrink-0 border-r border-gray-200 bg-white h-screen sticky top-[50px] pt-6 overflow-y-auto z-30">
+      <nav className="flex flex-col text-[13px] text-gray-600">
+        <NavLink
+          to="/"
+          className={({ isActive }) =>
+            `py-2 pl-2 pr-1 transition-colors ${
+              isActive
+                ? 'font-bold text-gray-900 bg-[#F1F2F3] border-r-[3px] border-[#F48024]'
+                : 'hover:text-gray-900'
+            }`
+          }
+        >
+          Home
+        </NavLink>
+
+        <div className="mt-4 mb-1 pl-2 text-[11px] text-gray-500 font-semibold tracking-wider">
+          PUBLIC
         </div>
-
-        {/* Navigation Section */}
-        <nav className="flex flex-col gap-2">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <NavLink
-                key={link.to}
-                to={link.to}
-                className={({ isActive }) =>
-                  `flex items-center gap-4 px-3 py-3 rounded-xl text-base font-medium transition-all duration-205 cursor-pointer ${
-                    isCollapsed ? 'justify-center' : ''
-                  } ${
-                    isActive
-                      ? 'text-neutral-900 dark:text-neutral-100 font-bold bg-neutral-50 dark:bg-neutral-900'
-                      : 'text-neutral-650 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 hover:text-neutral-900 dark:hover:text-neutral-200'
-                  }`
-                }
-                title={isCollapsed ? link.label : ''}
-              >
-                <Icon size={24} className="transition-transform duration-200" />
-                {!isCollapsed && <span>{link.label}</span>}
-              </NavLink>
-            );
-          })}
-
-          {/* Custom Create Post Link (Instagram Style) */}
-          <button
-            onClick={handleCreatePost}
-            className={`flex items-center gap-4 px-3 py-3 rounded-xl text-base font-medium transition-all duration-205 cursor-pointer text-neutral-650 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 hover:text-neutral-900 dark:hover:text-neutral-200 ${
-              isCollapsed ? 'justify-center' : 'w-full text-left'
-            }`}
-            title={isCollapsed ? t('createPost') : ''}
-          >
-            <PlusSquare size={24} />
-            {!isCollapsed && <span>{t('create')}</span>}
-          </button>
-        </nav>
-      </div>
-
-      {/* Footer Section */}
-      <div className="relative flex flex-col gap-4">
-        {/* More Menu Dropdown */}
-        {showMoreMenu && (
-          <div 
-            ref={moreMenuRef}
-            className={`absolute bottom-16 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl p-2 z-50 w-56 flex flex-col gap-1 transition-all duration-200 ${
-              isCollapsed ? 'left-2' : 'left-0'
-            }`}
-          >
-            {/* Settings */}
-            <NavLink
-              to="/settings"
-              onClick={() => setShowMoreMenu(false)}
-              className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-all"
-            >
-              <Settings size={18} />
-              <span>{t('settings')}</span>
-            </NavLink>
-
-            {/* Switch Appearance */}
-            <button
-              onClick={() => {
-                handleToggleTheme();
-              }}
-              className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 rounded-xl transition-all"
-            >
-              {darkMode ? <Sun size={18} /> : <Moon size={18} />}
-              <span>{t('switchAppearance')}</span>
-            </button>
-
-            <hr className="border-neutral-100 dark:border-neutral-800 my-1" />
-
-            {/* Log Out */}
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-3 w-full text-left px-4 py-3 text-sm font-medium text-rose-650 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all"
-            >
-              <LogOut size={18} />
-              <span>{t('logout')}</span>
-            </button>
-          </div>
-        )}
-
-        {/* More Button */}
-        <button
-          onClick={() => setShowMoreMenu(!showMoreMenu)}
-          className={`flex items-center gap-4 px-3 py-3 rounded-xl text-base font-medium text-neutral-655 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-900/60 hover:text-neutral-900 dark:hover:text-neutral-200 transition-all ${
-            isCollapsed ? 'justify-center' : ''
-          }`}
-          title={t('more')}
+        
+        <NavLink
+          to="/questions"
+          className={({ isActive }) =>
+            `flex items-center gap-1 py-2 pl-2 pr-1 transition-colors ${
+              isActive
+                ? 'font-bold text-gray-900 bg-[#F1F2F3] border-r-[3px] border-[#F48024]'
+                : 'hover:text-gray-900 hover:bg-gray-100'
+            }`
+          }
         >
-          <Menu size={24} />
-          {!isCollapsed && <span>{t('more')}</span>}
-        </button>
-
-        {/* Profile Info block */}
-        <NavLink 
-          to={`/profile/${user.username}`}
-          className={`flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
-        >
-          {user.avatar ? (
-            <img
-              src={user.avatar}
-              alt={user.username}
-              className="h-8 w-8 rounded-full object-cover border border-neutral-200 dark:border-neutral-800 shadow-sm"
-            />
-          ) : (
-            <div className="h-8 w-8 rounded-full bg-neutral-900 text-white dark:bg-neutral-100 dark:text-black flex items-center justify-center font-bold text-sm uppercase shadow-sm">
-              {user.username.charAt(0)}
-            </div>
-          )}
-          {!isCollapsed && (
-            <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate group-hover:text-indigo-500 transition-colors">
-                {user.username}
-              </span>
-              <span className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
-                {user.role === 'admin' ? 'Administrator' : 'Free plan'}
-              </span>
-            </div>
+          {({ isActive }) => (
+            <>
+              <Globe size={16} className={isActive ? 'text-gray-900' : 'text-gray-400'} />
+              <span className="ml-1">Questions</span>
+            </>
           )}
         </NavLink>
-      </div>
+
+        <NavLink
+          to="/tags"
+          className={({ isActive }) =>
+            `py-2 pl-8 pr-1 transition-colors ${
+              isActive
+                ? 'font-bold text-gray-900 bg-[#F1F2F3] border-r-[3px] border-[#F48024]'
+                : 'hover:text-gray-900 hover:bg-gray-100'
+            }`
+          }
+        >
+          Tags
+        </NavLink>
+
+        <NavLink
+          to="/users"
+          className={({ isActive }) =>
+            `py-2 pl-8 pr-1 transition-colors ${
+              isActive
+                ? 'font-bold text-gray-900 bg-[#F1F2F3] border-r-[3px] border-[#F48024]'
+                : 'hover:text-gray-900 hover:bg-gray-100'
+            }`
+          }
+        >
+          Users
+        </NavLink>
+        
+        <NavLink
+          to="/companies"
+          className={({ isActive }) =>
+            `py-2 pl-8 pr-1 transition-colors ${
+              isActive
+                ? 'font-bold text-gray-900 bg-[#F1F2F3] border-r-[3px] border-[#F48024]'
+                : 'hover:text-gray-900 hover:bg-gray-100'
+            }`
+          }
+        >
+          Companies
+        </NavLink>
+
+        <div className="mt-4 flex flex-col pl-2 pr-1">
+          <div className="flex items-center justify-between text-[11px] text-gray-500 font-semibold tracking-wider mb-2">
+            <span>COLLECTIVES</span>
+            <span className="text-gray-400 hover:text-blue-500 cursor-pointer">Explore</span>
+          </div>
+          <div className="text-xs text-gray-600 px-2 py-1 flex items-center gap-2 hover:bg-gray-100 cursor-pointer rounded-sm">
+            <span className="text-yellow-600 font-bold text-sm">★</span>
+            Explore Collectives
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col pl-2 pr-1">
+          <div className="flex items-center justify-between text-[11px] text-gray-500 font-semibold tracking-wider mb-2">
+            <span>TEAMS</span>
+            <span className="text-gray-400 hover:text-blue-500 cursor-pointer">What's this?</span>
+          </div>
+          <div className="px-2 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 cursor-pointer py-1.5 rounded-sm flex items-center gap-2">
+            <span className="text-orange-500 bg-orange-100 px-1 py-0.5 rounded text-[10px] font-bold">Free 30 Day Trial</span>
+          </div>
+        </div>
+      </nav>
     </aside>
   );
 };

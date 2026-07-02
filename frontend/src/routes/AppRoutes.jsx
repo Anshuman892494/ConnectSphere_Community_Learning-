@@ -13,20 +13,20 @@ import Profile from '../pages/Profile';
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
-import PageContainer from '../components/layout/PageContainer';
-
+import Navbar from '../components/layout/Navbar';
 import PhoneVerificationModal from '../components/common/PhoneVerificationModal';
 
 const DashboardLayout = () => {
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-neutral-50 dark:bg-neutral-950 transition-colors duration-200">
-      <Sidebar />
-      <main className="flex-1 h-screen overflow-y-auto">
-        <PageContainer>
+    <div className="min-h-screen flex flex-col bg-white font-sans">
+      <Navbar />
+      <div className="flex-1 flex w-full max-w-[1264px] mx-auto mt-[50px] relative justify-center">
+        <Sidebar />
+        <main className="flex-1 max-w-[1100px] w-full bg-white sm:p-6 p-4 md:border-l border-gray-200 min-h-screen">
           <Outlet />
           <PhoneVerificationModal />
-        </PageContainer>
-      </main>
+        </main>
+      </div>
     </div>
   );
 };

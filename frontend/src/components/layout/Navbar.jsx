@@ -1,18 +1,14 @@
 import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sun, Moon, LogOut, Globe } from 'lucide-react';
-import { useLanguage } from '../../contexts/LanguageContext';
-import { toggleTheme } from '../../store/themeSlice';
+import { Search, Inbox, Trophy, HelpCircle, LogOut } from 'lucide-react';
 import { logout } from '../../store/authSlice';
 import API from '../../services/api';
 
 const Navbar = () => {
   const { user } = useSelector((state) => state.auth);
-  const { darkMode } = useSelector((state) => state.theme);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { t } = useLanguage();
 
   const handleLogout = async () => {
     try {
@@ -24,111 +20,83 @@ const Navbar = () => {
     navigate('/login');
   };
 
-  // Dark mode toggle with view transition animation
-  const handleToggleTheme = (event) => {
-    if (!document.startViewTransition || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      dispatch(toggleTheme());
-      return;
-    }
-
-    const x = event.clientX;
-    const y = event.clientY;
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
-
-    const transition = document.startViewTransition(() => {
-      dispatch(toggleTheme());
-    });
-
-    transition.ready.then(() => {
-      const clipPath = [
-        `circle(0px at ${x}px ${y}px)`,
-        `circle(${endRadius}px at ${x}px ${y}px)`
-      ];
-      document.documentElement.animate(
-        {
-          clipPath: clipPath,
-        },
-        {
-          duration: 450,
-          easing: 'ease-out',
-          pseudoElement: '::view-transition-new(root)',
-        }
-      );
-    });
-  };
-
   return (
-    <nav className="sticky top-0 z-40 bg-white border-b border-slate-100 dark:bg-darkcard dark:border-darkborder transition-colors duration-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center gap-8">
-            <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-500 to-sky-500 flex items-center justify-center shadow-sm shadow-indigo-500/20 dark:shadow-indigo-500/10 hover:rotate-12 transition-transform duration-350">
-                <Globe className="text-white w-4 h-4" />
-              </div>
-              <span className="font-sans font-black text-xl tracking-tight bg-gradient-to-r from-indigo-600 to-sky-500 dark:from-indigo-400 dark:to-sky-400 bg-clip-text text-transparent">
-                ConnectSphere
-              </span>
-            </Link>
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-t-[3px] border-t-[#F48024] border-b border-gray-300 shadow-sm h-[50px] flex items-center">
+      <div className="max-w-[1264px] mx-auto px-4 w-full h-full flex items-center justify-between">
+        
+        {/* Left: Logo & Links */}
+        <div className="flex items-center h-full">
+          <Link to="/" className="flex items-center gap-1 hover:bg-gray-100 h-full px-2">
+            <div className="w-6 h-6 flex items-center justify-center">
+              <svg aria-hidden="true" className="w-8 h-8 text-[#F48024]" viewBox="0 0 32 37"><path d="M26 33v-9h4v13H0V24h4v9h22Z" fill="#BCBBBB"></path><path d="m21.5 0-2.7 2 9.9 13.3 2.7-2L21.5 0ZM26 18.4 13.3 7.8l2.1-2.5 12.7 10.6-2.1 2.5ZM9.1 15.2l15 7 1.4-3-15-7-1.4 3Zm14 10.79.68-2.95-16.1-3.35L7 23l16.1 2.99ZM23 30H7v-3h16v3Z" fill="#F48024"></path></svg>
+            </div>
+            <span className="font-sans text-[18px] text-gray-800 tracking-tight leading-none mt-1">
+              connect<span className="font-bold">sphere</span>
+            </span>
+          </Link>
+          <div className="hidden md:flex items-center text-[13px] text-gray-600 h-full">
+            <Link to="/" className="hover:bg-gray-100 hover:text-gray-900 px-3 py-1 rounded-full mx-1">About</Link>
+            <Link to="/" className="hover:bg-gray-100 hover:text-gray-900 px-3 py-1 rounded-full mx-1">Products</Link>
+            <Link to="/" className="hover:bg-gray-100 hover:text-gray-900 px-3 py-1 rounded-full mx-1">For Teams</Link>
           </div>
+        </div>
 
-          <div className="flex items-center gap-4">
-            {/* Dark Mode toggle */}
-            <button
-              onClick={handleToggleTheme}
-              className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-              aria-label="Toggle Dark Mode"
-            >
-              {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-            </button>
+        {/* Center: Search Bar */}
+        <div className="flex-1 max-w-3xl px-4 flex items-center">
+          <div className="relative w-full">
+            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 focus:border-[#0074CC] sm:text-[13px]"
+              placeholder="Search..."
+            />
+          </div>
+        </div>
 
-            {user ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2">
-                  {user.avatar ? (
-                    <img
-                      src={user.avatar}
-                      alt={user.username}
-                      className="h-8 w-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="h-8 w-8 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-sm uppercase">
-                      {user.username.charAt(0)}
-                    </div>
-                  )}
-                  <span className="hidden sm:inline text-sm font-semibold text-slate-700 dark:text-slate-300">
-                    {user.username}
-                  </span>
+        {/* Right: User Icons */}
+        <div className="flex items-center h-full">
+          {user ? (
+            <div className="flex items-center">
+              <Link to={`/profile/${user.username}`} className="flex items-center hover:bg-gray-100 px-3 h-[50px]">
+                {user.avatar ? (
+                  <img src={user.avatar} alt={user.username} className="h-6 w-6 rounded-md object-cover" />
+                ) : (
+                  <div className="h-6 w-6 rounded-md bg-purple-600 text-white flex items-center justify-center font-bold text-xs">
+                    {user.username.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <span className="font-semibold text-xs ml-2 text-gray-700 font-mono">1</span>
+                <div className="flex items-center ml-2 space-x-1 text-[10px]">
+                  <span className="text-yellow-600 flex items-center"><span className="w-1.5 h-1.5 bg-yellow-500 rounded-full mr-1"></span>0</span>
+                  <span className="text-gray-400 flex items-center"><span className="w-1.5 h-1.5 bg-gray-400 rounded-full mr-1"></span>0</span>
+                  <span className="text-yellow-800 flex items-center"><span className="w-1.5 h-1.5 bg-yellow-800 rounded-full mr-1"></span>0</span>
                 </div>
-
-                <button
-                  onClick={handleLogout}
-                  className="p-2 text-slate-400 hover:text-rose-600 dark:text-slate-500 dark:hover:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-all cursor-pointer"
-                  title="Logout"
-                >
-                  <LogOut size={18} />
-                </button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
-                <Link
-                  to="/login"
-                  className="text-sm font-semibold text-slate-700 dark:text-slate-300 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800"
-                >
-                  {t('login')}
-                </Link>
-                <Link
-                  to="/register"
-                  className="text-sm font-semibold text-white bg-primary-600 px-4 py-2 rounded-xl hover:bg-primary-700 shadow-md shadow-primary-500/10"
-                >
-                  {t('signup')}
-                </Link>
-              </div>
-            )}
-          </div>
+              </Link>
+              <button className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors h-[50px] px-3">
+                <Inbox size={20} />
+              </button>
+              <button className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors h-[50px] px-3">
+                <Trophy size={20} />
+              </button>
+              <button className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors h-[50px] px-3">
+                <HelpCircle size={20} />
+              </button>
+              <button onClick={handleLogout} className="p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-800 transition-colors h-[50px] px-3" title="Log out">
+                <LogOut size={20} />
+              </button>
+            </div>
+          ) : (
+            <div className="flex gap-1 ml-2">
+              <Link to="/login" className="text-[13px] text-[#0074CC] bg-[#E1ECF4] border border-[#7AA7C7] hover:bg-[#B3D3EA] px-3 py-1.5 rounded-[3px] font-medium transition-colors">
+                Log in
+              </Link>
+              <Link to="/register" className="text-[13px] text-white bg-[#0A95FF] border border-[#0A95FF] hover:bg-[#0074CC] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] px-3 py-1.5 rounded-[3px] font-medium transition-colors">
+                Sign up
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </nav>
