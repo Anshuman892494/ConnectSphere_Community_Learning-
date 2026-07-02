@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   register,
   login,
+  googleLogin,
   logout,
   refreshToken,
   getMe,
@@ -21,6 +22,7 @@ const { protect } = require('../middleware/auth');
 // Public routes
 router.post('/register', register);
 router.post('/login', login);
+router.post('/google', googleLogin);
 router.post('/logout', logout);
 router.post('/refresh', refreshToken);
 router.post('/forgot-password', forgotPassword);

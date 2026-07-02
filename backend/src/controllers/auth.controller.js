@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { sendOTPEmail, sendPasswordResetEmail } = require('../utils/sendEmail');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const JWT_SECRET = process.env.JWT_SECRET || 'connectsphere_jwt_secret_token_key_12345';
 
@@ -446,6 +449,14 @@ exports.updateVerificationContacts = async (req, res, next) => {
       await sendOTPEmail(user.email, user.emailVerificationCode, user.username);
     }
 
+    if (devOtp.emailOtp || devOtp.phoneOtp) {
+      console.log('\n=========================================');
+      console.log(`[DEV ONLY] OTP codes for contact update (${user.username}):`);
+      if (devOtp.emailOtp) console.log(`Email OTP: ${devOtp.emailOtp}`);
+      if (devOtp.phoneOtp) console.log(`Phone OTP: ${devOtp.phoneOtp}`);
+      console.log('=========================================\n');
+    }
+
     res.json({
       message: 'Contact details updated successfully',
       user: {
@@ -673,3 +684,100 @@ exports.verifyLanguageChange = async (req, res, next) => {
   }
 };
 
+// @desc    Google Login
+// @route   POST /api/auth/google
+// @access  Public
+exports.googleLogin = async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ message: 'Google token is missing' });
+    }
+
+    // Fetch user info from Google using the access token
+    const googleResponse = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    if (!googleResponse.ok) {
+      return res.status(401).json({ message: 'Invalid Google access token' });
+    }
+
+    const payload = await googleResponse.json();
+    const { email, name, picture, sub: googleId, email_verified } = payload;
+
+    if (!email_verified) {
+      return res.status(403).json({ message: 'Google email is not verified.' });
+    }
+
+    // Check if user exists
+    let user = await User.findOne({ email });
+
+    if (user) {
+      // If user exists but was registered manually, link their googleId
+      if (!user.googleId) {
+        user.googleId = googleId;
+        user.isEmailVerified = true;
+        await user.save();
+      }
+
+      if (user.isBlocked) {
+        return res.status(403).json({ message: 'This account has been suspended' });
+      }
+    } else {
+      // Determine role (first user is admin, else user)
+      const isFirstUser = (await User.countDocuments({})) === 0;
+      const role = isFirstUser ? 'admin' : 'user';
+
+      // Ensure unique username
+      let baseUsername = name.replace(/\s+/g, '').toLowerCase();
+      let uniqueUsername = baseUsername;
+      let counter = 1;
+      while (await User.findOne({ username: uniqueUsername })) {
+        uniqueUsername = `${baseUsername}${counter}`;
+        counter++;
+      }
+
+      // Create new user without password
+      user = await User.create({
+        username: uniqueUsername,
+        email,
+        googleId,
+        avatar: picture,
+        role,
+        isEmailVerified: true,
+      });
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    // Save refresh token
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      isPhoneVerified: user.isPhoneVerified,
+      language: user.language,
+      avatar: user.avatar,
+      token: accessToken,
+    });
+  } catch (error) {
+    console.error('Google Login Error:', error);
+    res.status(401).json({ message: 'Invalid Google token' });
+  }
+};
