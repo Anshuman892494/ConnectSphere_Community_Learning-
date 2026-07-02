@@ -214,7 +214,10 @@ const Sidebar = () => {
         </button>
 
         {/* Profile Info block */}
-        <div className={`flex items-center gap-3 px-2 py-1 ${isCollapsed ? 'justify-center' : ''}`}>
+        <NavLink 
+          to={`/profile/${user.username}`}
+          className={`flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors cursor-pointer ${isCollapsed ? 'justify-center' : ''}`}
+        >
           {user.avatar ? (
             <img
               src={user.avatar}
@@ -228,7 +231,7 @@ const Sidebar = () => {
           )}
           {!isCollapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate">
+              <span className="text-sm font-bold text-neutral-800 dark:text-neutral-200 truncate group-hover:text-indigo-500 transition-colors">
                 {user.username}
               </span>
               <span className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider">
@@ -236,7 +239,7 @@ const Sidebar = () => {
               </span>
             </div>
           )}
-        </div>
+        </NavLink>
       </div>
     </aside>
   );
