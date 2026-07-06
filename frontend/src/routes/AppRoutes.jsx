@@ -10,6 +10,9 @@ import Verify from '../pages/Verify';
 import ForgotPassword from '../pages/ForgotPassword';
 import Settings from '../pages/Settings';
 import Profile from '../pages/Profile';
+import QuestionDetail from '../pages/QuestionDetail';
+import Users from '../pages/Users';
+import Tags from '../pages/Tags';
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
@@ -49,6 +52,10 @@ const AppRoutes = () => {
         <Route element={<DashboardLayout />}>
           {/* Main User Dashboard / Feed */}
           <Route path="/" element={<Feed />} />
+          <Route path="/questions" element={<Feed />} />
+          <Route path="/questions/:id" element={<QuestionDetail />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/tags" element={<Tags />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/settings" element={<Settings />} />
         </Route>

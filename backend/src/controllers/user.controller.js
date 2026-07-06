@@ -58,3 +58,17 @@ exports.updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get all users list
+// @route   GET /api/users
+// @access  Private
+exports.getUsers = async (req, res, next) => {
+  try {
+    const users = await User.find({})
+      .select('-password -emailVerificationCode -phoneVerificationCode -refreshToken')
+      .sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    next(error);
+  }
+};

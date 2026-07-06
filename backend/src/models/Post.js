@@ -36,7 +36,29 @@ const PostSchema = new mongoose.Schema(
       type: String,
       required: [true, 'Please add a caption'],
     },
+    description: {
+      type: String,
+      default: '',
+    },
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
     likes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    upvotes: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    downvotes: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',

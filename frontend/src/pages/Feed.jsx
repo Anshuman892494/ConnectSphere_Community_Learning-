@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
+import { Link, useLocation } from 'react-router-dom';
 import { MessageSquare, Trash2, X, PlusSquare } from 'lucide-react';
 import API from '../services/api';
 import { useToast } from '../contexts/ToastContext';
@@ -10,17 +11,21 @@ const Feed = () => {
   const { user } = useSelector((state) => state.auth);
   const { addToast } = useToast();
   const { t } = useLanguage();
+  const location = useLocation();
   
   const [posts, setPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
   // Post Creation fields
   const [caption, setCaption] = useState('');
+  const [description, setDescription] = useState('');
+  const [tags, setTags] = useState('');
   const [postType, setPostType] = useState('text');
   const [mediaUrl, setMediaUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('Interesting');
+  const [selectedTag, setSelectedTag] = useState(null);
 
   const fetchPosts = async () => {
     try {
@@ -37,6 +42,14 @@ const Feed = () => {
   useEffect(() => {
     fetchPosts();
   }, []);
+
+  useEffect(() => {
+    if (location.state?.selectedTag) {
+      setSelectedTag(location.state.selectedTag);
+      // Clear navigation state to avoid sticky filter on page reload
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   useEffect(() => {
     const handleOpenModal = () => setIsCreateModalOpen(true);
@@ -64,9 +77,13 @@ const Feed = () => {
         type: postType,
         mediaUrl: finalMediaUrl,
         caption,
+        description,
+        tags
       });
       setPosts((prev) => [response.data, ...prev]);
       setCaption('');
+      setDescription('');
+      setTags('');
       setMediaUrl('');
       setPostType('text');
       setIsCreateModalOpen(false);
@@ -137,6 +154,16 @@ const Feed = () => {
           </div>
         </div>
 
+        {/* Selected Tag Filter Banner */}
+        {selectedTag && (
+          <div className="flex items-center gap-2 mb-4 bg-[#FDF7E2] border border-[#E6E4C4] text-gray-800 px-3 py-2 rounded-[3px] text-[13px]">
+            <span>Showing questions tagged with <span className="font-bold text-gray-900 font-mono">"{selectedTag}"</span></span>
+            <button onClick={() => setSelectedTag(null)} className="text-[#0074CC] hover:text-[#0A95FF] ml-auto font-medium hover:underline cursor-pointer">
+              Clear Filter
+            </button>
+          </div>
+        )}
+
         {/* Posts List */}
         {isLoading ? (
           <div className="space-y-4">
@@ -150,20 +177,22 @@ const Feed = () => {
               </div>
             ))}
           </div>
-        ) : posts.length === 0 ? (
+        ) : (selectedTag ? posts.filter(p => p.tags && p.tags.some(t => t.toLowerCase() === selectedTag.toLowerCase())) : posts).length === 0 ? (
           <EmptyState
             title="No questions yet"
-            message="Be the first to ask a question on ConnectSphere."
+            message={selectedTag ? "No questions match this tag." : "Be the first to ask a question on ConnectSphere."}
           />
         ) : (
           <div className="border-t border-gray-200">
-            {posts.map((post) => {
+            {(selectedTag ? posts.filter(p => p.tags && p.tags.some(t => t.toLowerCase() === selectedTag.toLowerCase())) : posts).map((post) => {
               const isLiked = post.likes.includes(user?._id);
               const postOwnerName = post.user?.username || 'Unknown User';
-              const votes = post.likes?.length || 0;
+              const upvotesCount = post.upvotes?.length ?? post.likes?.length ?? 0;
+              const downvotesCount = post.downvotes?.length ?? 0;
+              const votes = upvotesCount - downvotesCount;
               const answers = post.comments?.length || 0;
-              const views = Math.floor(Math.random() * 100) + votes * 2; // Mock views
-              const tags = postType === 'text' ? ['javascript', 'react'] : ['media', 'discussion'];
+              const views = Math.floor(Math.random() * 100) + Math.abs(votes) * 2; // Mock views
+              const postTags = post.tags && post.tags.length > 0 ? post.tags : (post.type === 'text' ? ['javascript', 'react'] : ['media', 'discussion']);
 
               return (
                 <div key={post._id} className="flex p-4 border-b border-gray-200 gap-4 hover:bg-gray-50 transition-colors relative">
@@ -189,9 +218,11 @@ const Feed = () => {
                   {/* Right Content Block */}
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-start">
-                      <h3 className="text-[17px] text-[#0074CC] hover:text-[#0A95FF] mb-1 font-medium leading-tight line-clamp-2 cursor-pointer">
-                        {post.caption}
-                      </h3>
+                      <Link to={`/questions/${post._id}`} className="flex-1 min-w-0">
+                        <h3 className="text-[17px] text-[#0074CC] hover:text-[#0A95FF] mb-1 font-medium leading-tight line-clamp-2 cursor-pointer">
+                          {post.caption}
+                        </h3>
+                      </Link>
                       
                       {(user?.role === 'admin' || post.user?._id === user?._id || post.user === user?._id) && (
                         <button
@@ -205,14 +236,14 @@ const Feed = () => {
                     </div>
                     
                     <p className="text-[13px] text-[#3B4045] line-clamp-2 mb-2 leading-relaxed">
-                      {post.mediaUrl ? 'View attached media for more context on this question.' : 'I am working on a project and I encountered this issue. Can someone explain why this is happening?'}
+                      {post.description ? (post.description.length > 150 ? post.description.substring(0, 150) + '...' : post.description) : (post.mediaUrl ? 'View attached media for more context on this question.' : 'Click to view this question detail and answers.')}
                     </p>
                     
                     <div className="flex items-center justify-between mt-auto pt-1">
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1">
-                        {tags.map(tag => (
-                          <span key={tag} className="text-[#39739D] bg-[#E1ECF4] hover:bg-[#D0E3F1] px-1.5 py-1 rounded-[3px] text-[12px] cursor-pointer">
+                        {postTags.map(tag => (
+                          <span key={tag} onClick={() => setSelectedTag(tag)} className="text-[#39739D] bg-[#E1ECF4] hover:bg-[#D0E3F1] px-1.5 py-1 rounded-[3px] text-[12px] cursor-pointer">
                             {tag}
                           </span>
                         ))}
@@ -350,9 +381,24 @@ const Feed = () => {
                 </div>
 
                 <textarea
-                  placeholder="Describe your issue here..."
+                  placeholder="Describe your issue here... Supports Markdown formatting."
                   rows={8}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
                   className="w-full border border-gray-300 rounded p-3 font-mono text-sm focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
+                  required
+                />
+              </div>
+
+              <div className="border border-gray-300 p-6 rounded bg-white mb-6">
+                <label className="block font-bold text-[15px] text-gray-900 mb-1">Tags</label>
+                <p className="text-[12px] text-gray-500 mb-2">Add tags to describe what your question is about (comma separated).</p>
+                <input
+                  type="text"
+                  placeholder="e.g. javascript, react, node.js"
+                  value={tags}
+                  onChange={(e) => setTags(e.target.value)}
+                  className="w-full border border-gray-300 rounded p-2 focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
                 />
               </div>
 
@@ -360,7 +406,7 @@ const Feed = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting || !caption.trim()}
-                  className="bg-[#0A95FF] hover:bg-[#0074CC] text-white font-bold py-2 px-3 rounded shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50"
+                  className="bg-[#0A95FF] hover:bg-[#0074CC] text-white font-bold py-2 px-3 rounded shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50 cursor-pointer"
                 >
                   {isSubmitting ? 'Posting...' : 'Post your question'}
                 </button>
