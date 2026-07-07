@@ -103,6 +103,21 @@ const UserSchema = new mongoose.Schema(
     tempLanguageSwapTarget: {
       type: String,
     },
+    loginOtpCode: {
+      type: String,
+    },
+    loginOtpExpires: {
+      type: Date,
+    },
+    loginHistory: [
+      {
+        browser: { type: String },
+        os: { type: String },
+        device: { type: String },
+        ipAddress: { type: String },
+        loginTime: { type: Date, default: Date.now }
+      }
+    ]
   },
   {
     timestamps: true,
