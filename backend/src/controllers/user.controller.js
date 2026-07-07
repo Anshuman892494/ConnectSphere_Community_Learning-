@@ -12,12 +12,18 @@ exports.getUserProfile = async (req, res, next) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
+    const isOwnProfile = req.user && user._id.toString() === req.user.id.toString();
+    const userObj = user.toObject();
+    if (!isOwnProfile) {
+      delete userObj.loginHistory;
+    }
+
     const posts = await Post.find({ user: user._id })
       .sort({ createdAt: -1 })
       .populate('user', 'username avatar')
       .populate('comments.user', 'username avatar');
 
-    res.json({ user, posts });
+    res.json({ user: userObj, posts });
   } catch (error) {
     next(error);
   }

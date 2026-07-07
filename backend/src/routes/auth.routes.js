@@ -16,6 +16,7 @@ const {
   updatePassword,
   requestLanguageChange,
   verifyLanguageChange,
+  verifyLoginOtp,
 } = require('../controllers/auth.controller');
 const { protect } = require('../middleware/auth');
 
@@ -23,6 +24,7 @@ const { protect } = require('../middleware/auth');
 router.post('/register', register);
 router.post('/login', login);
 router.post('/google', googleLogin);
+router.post('/login/verify-otp', verifyLoginOtp);
 router.post('/logout', logout);
 router.post('/refresh', refreshToken);
 router.post('/forgot-password', forgotPassword);

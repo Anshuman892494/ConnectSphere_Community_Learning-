@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
-const { sendOTPEmail, sendPasswordResetEmail } = require('../utils/sendEmail');
+const { sendOTPEmail, sendPasswordResetEmail, sendLoginOTPEmail } = require('../utils/sendEmail');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -20,6 +20,69 @@ const generateAccessToken = (id) => {
 // Helper: Generate Refresh Token (long-lived)
 const generateRefreshToken = (id) => {
   return jwt.sign({ id }, JWT_SECRET, { expiresIn: '30d' });
+};
+
+// Helper: Detect browser, OS, device and IP address from request headers
+const detectEnvironment = (req) => {
+  const ua = req.headers['user-agent'] || '';
+  let ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '';
+  if (typeof ip === 'string' && ip.startsWith('::ffff:')) {
+    ip = ip.substring(7);
+  }
+  if (ip === '::1') {
+    ip = '127.0.0.1';
+  }
+
+  let browser = 'Other Browser';
+  if (/edg(e)?|msie|trident/i.test(ua)) {
+    browser = 'Microsoft Edge';
+  } else if (/chrome|crios/i.test(ua)) {
+    browser = 'Google Chrome';
+  } else if (/firefox|fxios/i.test(ua)) {
+    browser = 'Firefox';
+  } else if (/safari/i.test(ua)) {
+    browser = 'Safari';
+  }
+
+  let os = 'Other OS';
+  if (/windows/i.test(ua)) os = 'Windows';
+  else if (/macintosh|mac os x/i.test(ua)) os = 'macOS';
+  else if (/iphone|ipad|ipod/i.test(ua)) os = 'iOS';
+  else if (/android/i.test(ua)) os = 'Android';
+  else if (/linux/i.test(ua)) os = 'Linux';
+
+  let device = 'desktop';
+  if (/mobi|tablet|ipad|iphone|android/i.test(ua)) {
+    device = 'mobile';
+  } else {
+    if (req.body.deviceType === 'laptop') {
+      device = 'laptop';
+    } else if (req.body.deviceType === 'desktop') {
+      device = 'desktop';
+    } else {
+      device = 'laptop'; // Heuristic fallback for non-mobile OS
+    }
+  }
+
+  return { browser, os, device, ipAddress: ip };
+};
+
+// Helper: Check if login from a mobile device is within 10:00 AM - 1:00 PM IST
+const isMobileLoginAllowed = () => {
+  const formatter = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: 'numeric',
+    hour12: false
+  });
+  const parts = formatter.formatToParts(new Date());
+  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+  const currentMinutes = (hour * 60) + minute;
+
+  const start = 10 * 60; // 10:00 AM
+  const end = 13 * 60;   // 1:00 PM
+  return currentMinutes >= start && currentMinutes <= end;
 };
 
 // Helper: Extract refresh token from cookies
@@ -142,8 +205,51 @@ exports.login = async (req, res, next) => {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    // Detect environment
+    const env = detectEnvironment(req);
+
+    // Mobile check
+    if (env.device === 'mobile') {
+      if (!isMobileLoginAllowed()) {
+        return res.status(403).json({
+          message: 'Access restricted. Mobile logins are only allowed between 10:00 AM and 1:00 PM IST.'
+        });
+      }
+    }
+
+    // Chrome OTP check (bypassed if Microsoft Edge / Microsoft browser is detected)
+    if (env.browser === 'Google Chrome') {
+      const loginOtp = generateOTP();
+      user.loginOtpCode = loginOtp;
+      user.loginOtpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+      await user.save();
+
+      await sendLoginOTPEmail(user.email, loginOtp, user.username);
+
+      return res.json({
+        requireOtp: true,
+        email: user.email,
+        message: 'OTP verification code sent to your registered email address.',
+        _devOtp: loginOtp
+      });
+    }
+
+    // Other browsers / Microsoft Edge bypass: login immediately
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    // Track login history
+    user.loginHistory.push({
+      browser: env.browser,
+      os: env.os,
+      device: env.device,
+      ipAddress: env.ipAddress,
+      loginTime: new Date()
+    });
+
+    if (user.loginHistory.length > 50) {
+      user.loginHistory.shift();
+    }
 
     // Save refresh token
     user.refreshToken = refreshToken;
@@ -168,6 +274,7 @@ exports.login = async (req, res, next) => {
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       language: user.language,
+      avatar: user.avatar || '',
       token: accessToken,
     });
   } catch (error) {
@@ -750,8 +857,50 @@ exports.googleLogin = async (req, res, next) => {
       });
     }
 
+    // Detect environment
+    const env = detectEnvironment(req);
+
+    // Mobile check
+    if (env.device === 'mobile') {
+      if (!isMobileLoginAllowed()) {
+        return res.status(403).json({
+          message: 'Access restricted. Mobile logins are only allowed between 10:00 AM and 1:00 PM IST.'
+        });
+      }
+    }
+
+    // Chrome OTP check (bypassed if Microsoft Edge / Microsoft browser is detected)
+    if (env.browser === 'Google Chrome') {
+      const loginOtp = generateOTP();
+      user.loginOtpCode = loginOtp;
+      user.loginOtpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
+      await user.save();
+
+      await sendLoginOTPEmail(user.email, loginOtp, user.username);
+
+      return res.json({
+        requireOtp: true,
+        email: user.email,
+        message: 'OTP verification code sent to your registered email address.',
+        _devOtp: loginOtp
+      });
+    }
+
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    // Track login history
+    user.loginHistory.push({
+      browser: env.browser,
+      os: env.os,
+      device: env.device,
+      ipAddress: env.ipAddress,
+      loginTime: new Date()
+    });
+
+    if (user.loginHistory.length > 50) {
+      user.loginHistory.shift();
+    }
 
     // Save refresh token
     user.refreshToken = refreshToken;
@@ -779,5 +928,95 @@ exports.googleLogin = async (req, res, next) => {
   } catch (error) {
     console.error('Google Login Error:', error);
     res.status(401).json({ message: 'Invalid Google token' });
+  }
+};
+
+// @desc    Verify OTP for Google Chrome Login
+// @route   POST /api/auth/login/verify-otp
+// @access  Public
+exports.verifyLoginOtp = async (req, res, next) => {
+  try {
+    const { email, otpCode, rememberMe } = req.body;
+
+    if (!email || !otpCode) {
+      return res.status(400).json({ message: 'Please provide email and OTP code' });
+    }
+
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (user.isBlocked) {
+      return res.status(403).json({ message: 'This account has been suspended' });
+    }
+
+    // Verify OTP
+    if (!user.loginOtpCode || user.loginOtpCode !== otpCode) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    if (new Date() > user.loginOtpExpires) {
+      return res.status(400).json({ message: 'Verification code has expired' });
+    }
+
+    // Detect environment
+    const env = detectEnvironment(req);
+
+    // Re-verify mobile login restrictions
+    if (env.device === 'mobile') {
+      if (!isMobileLoginAllowed()) {
+        return res.status(403).json({
+          message: 'Access restricted. Mobile logins are only allowed between 10:00 AM and 1:00 PM IST.'
+        });
+      }
+    }
+
+    // Clear OTP fields
+    user.loginOtpCode = undefined;
+    user.loginOtpExpires = undefined;
+
+    // Track login history
+    user.loginHistory.push({
+      browser: env.browser,
+      os: env.os,
+      device: env.device,
+      ipAddress: env.ipAddress,
+      loginTime: new Date()
+    });
+
+    if (user.loginHistory.length > 50) {
+      user.loginHistory.shift();
+    }
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    const maxAge = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 24 * 60 * 60 * 1000;
+
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge,
+    });
+
+    res.json({
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      phone: user.phone || '',
+      role: user.role,
+      isEmailVerified: user.isEmailVerified,
+      isPhoneVerified: user.isPhoneVerified,
+      language: user.language,
+      avatar: user.avatar || '',
+      token: accessToken,
+    });
+  } catch (error) {
+    next(error);
   }
 };
