@@ -20,6 +20,7 @@ const getInitialTheme = () => {
 
 const initialState = {
   darkMode: getInitialTheme(),
+  mobileSidebarOpen: false,
 };
 
 const themeSlice = createSlice({
@@ -36,8 +37,14 @@ const themeSlice = createSlice({
         document.documentElement.classList.remove('dark');
       }
     },
+    toggleMobileSidebar(state) {
+      state.mobileSidebarOpen = !state.mobileSidebarOpen;
+    },
+    closeMobileSidebar(state) {
+      state.mobileSidebarOpen = false;
+    },
   },
 });
 
-export const { toggleTheme } = themeSlice.actions;
+export const { toggleTheme, toggleMobileSidebar, closeMobileSidebar } = themeSlice.actions;
 export default themeSlice.reducer;
