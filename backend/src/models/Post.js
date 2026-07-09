@@ -10,6 +10,18 @@ const CommentSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please add comment text'],
   },
+  upvotes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
+  downvotes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
@@ -65,6 +77,14 @@ const PostSchema = new mongoose.Schema(
       },
     ],
     comments: [CommentSchema],
+    views: {
+      type: Number,
+      default: 0,
+    },
+    acceptedAnswer: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
   },
   {
     timestamps: true,
