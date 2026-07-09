@@ -13,10 +13,12 @@ import Profile from '../pages/Profile';
 import QuestionDetail from '../pages/QuestionDetail';
 import Users from '../pages/Users';
 import Tags from '../pages/Tags';
+import AskQuestion from '../pages/AskQuestion';
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
+import Footer from '../components/layout/Footer';
 import PhoneVerificationModal from '../components/common/PhoneVerificationModal';
 
 const DashboardLayout = () => {
@@ -30,6 +32,7 @@ const DashboardLayout = () => {
           <PhoneVerificationModal />
         </main>
       </div>
+      <Footer />
     </div>
   );
 };
@@ -53,6 +56,7 @@ const AppRoutes = () => {
           {/* Main User Dashboard / Feed */}
           <Route path="/" element={<Feed />} />
           <Route path="/questions" element={<Feed />} />
+          <Route path="/questions/ask" element={<AskQuestion />} />
           <Route path="/questions/:id" element={<QuestionDetail />} />
           <Route path="/users" element={<Users />} />
           <Route path="/tags" element={<Tags />} />
