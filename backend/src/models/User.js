@@ -51,6 +51,16 @@ const UserSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    reputation: {
+      type: Number,
+      default: 1,
+    },
+    savedPosts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post',
+      },
+    ],
     isBlocked: {
       type: Boolean,
       default: false,

@@ -20,8 +20,8 @@ exports.getUserProfile = async (req, res, next) => {
 
     const posts = await Post.find({ user: user._id })
       .sort({ createdAt: -1 })
-      .populate('user', 'username avatar')
-      .populate('comments.user', 'username avatar');
+      .populate('user', 'username avatar reputation')
+      .populate('comments.user', 'username avatar reputation');
 
     res.json({ user: userObj, posts });
   } catch (error) {
@@ -53,6 +53,7 @@ exports.updateProfile = async (req, res, next) => {
       email: user.email,
       phone: user.phone || '',
       role: user.role,
+      reputation: user.reputation,
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       language: user.language,
