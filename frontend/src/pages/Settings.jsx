@@ -3,28 +3,70 @@ import { useSelector } from 'react-redux';
 import { useToast } from '../contexts/ToastContext';
 import API from '../services/api';
 import { useLanguage } from '../contexts/LanguageContext';
-import { X, ShieldCheck, RefreshCw } from 'lucide-react';
+import { 
+  ShieldCheck, 
+  RefreshCw, 
+  Pencil, 
+  ExternalLink, 
+  Cake, 
+  Clock, 
+  Calendar, 
+  Mail, 
+  Sliders, 
+  Cpu, 
+  Shield,
+  X
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+// Import refactored setting tabs
+import PreferencesTab from './Settings/PreferencesTab';
+import SecurityTab from './Settings/SecurityTab';
+import LanguageTab from './Settings/LanguageTab';
+import ProfileTab from './Settings/ProfileTab';
 
 const Settings = () => {
   const { user } = useSelector((state) => state.auth);
   const { addToast } = useToast();
-  const { t, currentLanguage, requestLanguageChange, verifyLanguageChange } = useLanguage();
+  const { currentLanguage, requestLanguageChange, verifyLanguageChange } = useLanguage();
 
-  // Tab State
-  const [activeSettingsTab, setActiveSettingsTab] = useState('password');
+  // Selected Section State
+  const [activeSection, setActiveSection] = useState('preferences');
 
-  // Change Password form state
+  // Preferences Toggles States
+  const [preferences, setPreferences] = useState(() => {
+    const saved = localStorage.getItem('user-preferences');
+    return saved ? JSON.parse(saved) : {
+      highContrast: false,
+      newEditor: true,
+      keyboardShortcuts: false,
+      leftNavigation: true,
+      hotNetworkQuestions: true,
+      stagingGround: true,
+      tagGuidance: false,
+      experiments: true,
+    };
+  });
+
+  // Selected Theme State
+  const [selectedTheme, setSelectedTheme] = useState(() => {
+    return localStorage.getItem('theme-preference') || 'light';
+  });
+
+  // Excluded Companies List State
+  const [excludeInput, setExcludeInput] = useState('');
+  const [excludedCompanies, setExcludedCompanies] = useState(['Meta', 'Alphabet', 'Amazon']);
+
+  // Change Password Form State
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [errors, setErrors] = useState({});
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [passwordErrors, setPasswordErrors] = useState({});
 
-  // Language settings state
+  // Language Settings State
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
   const [isSwappingLanguage, setIsSwappingLanguage] = useState(false);
-  
-  // Verification Modal state
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
@@ -32,12 +74,11 @@ const Settings = () => {
   const [countdown, setCountdown] = useState(60);
   const [swapTarget, setSwapTarget] = useState('');
 
-  // Synchronize selection with language preference changes
-  useEffect(() => {
-    setSelectedLanguage(currentLanguage);
-  }, [currentLanguage]);
+  // Profile Edit fields
+  const [displayName, setDisplayName] = useState(user?.username || 'Anshuman Varma');
+  const [bioText, setBioText] = useState(user?.bio || 'Full stack engineer building ConnectSphere.');
 
-  // Countdown timer for OTP resend
+  // Countdown timer for OTP
   useEffect(() => {
     let timer;
     if (isVerifyModalOpen && countdown > 0) {
@@ -47,6 +88,48 @@ const Settings = () => {
     }
     return () => clearInterval(timer);
   }, [isVerifyModalOpen, countdown]);
+
+  // Apply Theme Helper
+  const applyTheme = (themeMode) => {
+    const root = document.documentElement;
+    root.classList.remove('dark');
+    if (themeMode === 'dark') {
+      root.classList.add('dark');
+    } else if (themeMode === 'system') {
+      const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (systemPrefersDark) {
+        root.classList.add('dark');
+      }
+    }
+  };
+
+  const handleThemeChange = (themeMode) => {
+    setSelectedTheme(themeMode);
+    localStorage.setItem('theme-preference', themeMode);
+    applyTheme(themeMode);
+    addToast(`Theme preference updated to ${themeMode}.`, 'success');
+  };
+
+  const handlePreferenceToggle = (key) => {
+    const updated = { ...preferences, [key]: !preferences[key] };
+    setPreferences(updated);
+    localStorage.setItem('user-preferences', JSON.stringify(updated));
+    addToast('Preferences saved.', 'success');
+  };
+
+  const handleAddCompany = (e) => {
+    e.preventDefault();
+    if (excludeInput.trim() && !excludedCompanies.includes(excludeInput.trim())) {
+      setExcludedCompanies([...excludedCompanies, excludeInput.trim()]);
+      setExcludeInput('');
+      addToast('Company excluded from ad listings.', 'success');
+    }
+  };
+
+  const handleRemoveCompany = (companyName) => {
+    setExcludedCompanies(excludedCompanies.filter(c => c !== companyName));
+    addToast('Company exclusion removed.', 'info');
+  };
 
   const validatePassword = () => {
     const tempErrors = {};
@@ -61,8 +144,7 @@ const Settings = () => {
     if (newPassword !== confirmPassword) {
       tempErrors.confirmPassword = 'Passwords do not match';
     }
-
-    setErrors(tempErrors);
+    setPasswordErrors(tempErrors);
     return Object.keys(tempErrors).length === 0;
   };
 
@@ -70,7 +152,7 @@ const Settings = () => {
     e.preventDefault();
     if (!validatePassword()) return;
 
-    setIsLoading(true);
+    setIsPasswordLoading(true);
     try {
       await API.put('/auth/update-password', {
         currentPassword,
@@ -80,24 +162,24 @@ const Settings = () => {
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-      setErrors({});
+      setPasswordErrors({});
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to update password. Please check your inputs.';
+      const msg = err.response?.data?.message || 'Failed to update password. Check your inputs.';
       addToast(msg, 'error');
     } finally {
-      setIsLoading(false);
+      setIsPasswordLoading(false);
     }
   };
 
   const handleRequestLanguage = async (e) => {
     e.preventDefault();
     if (selectedLanguage === currentLanguage) {
-      addToast('Please choose a different language', 'warning');
+      addToast('Please select a different language', 'warning');
       return;
     }
 
-    if (selectedLanguage !== 'fr' && !user.phone) {
-      addToast(t('mobileNotRegistered'), 'error');
+    if (selectedLanguage !== 'fr' && !user?.phone) {
+      addToast('Mobile number is required for SMS verification.', 'error');
       return;
     }
 
@@ -108,10 +190,9 @@ const Settings = () => {
       setDevOtp(data._devOtp || '');
       setCountdown(60);
       setIsVerifyModalOpen(true);
-      addToast('Verification code sent successfully', 'success');
+      addToast('Verification code sent successfully.', 'success');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to request language change.';
-      addToast(msg, 'error');
+      addToast('Failed to request language change.', 'error');
     } finally {
       setIsSwappingLanguage(false);
     }
@@ -132,8 +213,7 @@ const Settings = () => {
       setOtpCode('');
       setDevOtp('');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Invalid verification code.';
-      addToast(msg, 'error');
+      addToast('Invalid verification code.', 'error');
     } finally {
       setIsVerifyingOtp(false);
     }
@@ -145,195 +225,300 @@ const Settings = () => {
       const data = await requestLanguageChange(swapTarget);
       setDevOtp(data._devOtp || '');
       setCountdown(60);
-      addToast('Verification code resent successfully', 'success');
+      addToast('Verification code resent.', 'success');
     } catch (err) {
       addToast('Failed to resend code', 'error');
     }
   };
 
-  return (
-    <div className="max-w-[1100px] mx-auto pt-6 px-4 font-sans text-[#242729]">
-      
-      <h1 className="text-[27px] font-normal mb-6">Settings</h1>
+  const handleProfileSave = (e) => {
+    e.preventDefault();
+    addToast('Profile changes saved successfully (Simulation)!', 'success');
+  };
 
-      <div className="flex flex-col md:flex-row min-h-[600px]">
+  const getMemberDays = () => {
+    if (!user?.createdAt) return '4 days';
+    const diffTime = Math.abs(new Date() - new Date(user.createdAt));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+  };
+
+  return (
+    <div className="max-w-[1100px] mx-auto text-[13px] text-gray-800 font-sans">
+      
+      {/* Top Header Profile Card */}
+      <div className="relative mb-5 pt-4">
+        <div className="flex flex-wrap items-center gap-4 md:gap-5 pb-5 border-b border-gray-200">
+          <div className="w-16 h-16 md:w-20 md:h-20 rounded-md border border-gray-200 overflow-hidden shadow-sm flex-shrink-0">
+            {user?.avatar ? (
+              <img src={user.avatar} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-purple-600 text-white flex items-center justify-center font-bold text-2xl uppercase">
+                {user?.username?.charAt(0)}
+              </div>
+            )}
+          </div>
+          
+          <div className="flex-1">
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 leading-tight">
+              {displayName}
+            </h1>
+            
+            <ul className="flex flex-wrap items-center gap-3.5 mt-2 text-xs text-gray-500 font-normal">
+              <li className="flex items-center gap-1">
+                <Cake size={14} className="text-gray-400" />
+                <span>Member for <span className="text-gray-800 font-medium">{getMemberDays()}</span></span>
+              </li>
+              <li className="flex items-center gap-1">
+                <Clock size={14} className="text-gray-400" />
+                <span>Last seen <span className="text-gray-800 font-medium">this week</span></span>
+              </li>
+              <li className="flex items-center gap-1">
+                <Calendar size={14} className="text-gray-400" />
+                <span>Visited 2 days total</span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="flex flex-wrap gap-2 sm:ml-auto">
+            <button 
+              onClick={() => setActiveSection('edit-profile')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-[3px] text-xs font-medium shadow-sm transition-all cursor-pointer"
+            >
+              <Pencil size={12} className="text-yellow-600" />
+              <span>Edit profile</span>
+            </button>
+            <button 
+              onClick={() => addToast('Redirecting to StackExchange Network...', 'info')}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-[3px] text-xs font-medium shadow-sm transition-all cursor-pointer"
+            >
+              <span>Network profile</span>
+              <ExternalLink size={11} className="text-blue-500" />
+            </button>
+          </div>
+        </div>
+
+        {/* Sub-Navigation Tabs */}
+        <div className="flex items-center border-b border-gray-200 mt-4 text-[13px]">
+          <Link to={`/profile/${user?.username}`} className="px-4 py-2 text-gray-600 hover:text-gray-900 border-b-2 border-transparent transition-colors">
+            Profile
+          </Link>
+          <Link to={`/profile/${user?.username}`} className="px-4 py-2 text-gray-600 hover:text-gray-900 border-b-2 border-transparent transition-colors">
+            Activity
+          </Link>
+          <button onClick={() => addToast('Saves list is empty.', 'info')} className="px-4 py-2 text-gray-600 hover:text-gray-900 border-b-2 border-transparent transition-colors cursor-pointer">
+            Saves
+          </button>
+          <button className="px-4 py-2 font-bold text-gray-900 border-b-2 border-orange-500 cursor-default bg-gray-50">
+            Settings
+          </button>
+        </div>
+      </div>
+
+      {/* Main Settings Body */}
+      <div className="flex flex-col md:flex-row gap-6 pt-2 pb-16">
         
-        {/* Left Sidebar Menu */}
-        <div className="md:w-[200px] flex-shrink-0 mb-6 md:mb-0 md:mr-8">
-          <ul className="flex flex-col text-[13px] text-[#525960]">
-            <li className="font-bold text-[#242729] mb-2 uppercase text-[11px] tracking-wider">
-              Personal Information
-            </li>
-            <li 
-              onClick={() => setActiveSettingsTab('password')}
-              className={`px-3 py-1.5 cursor-pointer rounded-[100px] transition-colors mb-1 ${
-                activeSettingsTab === 'password'
-                  ? 'bg-[#F1F2F3] font-bold text-[#0C0D0E]'
-                  : 'hover:bg-[#E3E6E8]'
-              }`}
-            >
-              Change password
-            </li>
-            <li 
-              onClick={() => setActiveSettingsTab('language')}
-              className={`px-3 py-1.5 cursor-pointer rounded-[100px] transition-colors mb-4 ${
-                activeSettingsTab === 'language'
-                  ? 'bg-[#F1F2F3] font-bold text-[#0C0D0E]'
-                  : 'hover:bg-[#E3E6E8]'
-              }`}
-            >
-              Language
-            </li>
-            <li className="font-bold text-[#242729] mb-2 uppercase text-[11px] tracking-wider">
-              Preferences
-            </li>
-            <li 
-              onClick={() => addToast('Edit Profile mock option', 'info')}
-              className="px-3 py-1.5 cursor-pointer hover:bg-[#E3E6E8] rounded-[100px] transition-colors mb-1"
-            >
-              Edit profile
-            </li>
-            <li 
-              onClick={() => addToast('Apps and Websites mock option', 'info')}
-              className="px-3 py-1.5 cursor-pointer hover:bg-[#E3E6E8] rounded-[100px] transition-colors mb-1"
-            >
-              Apps and Websites
-            </li>
-            <li 
-              onClick={() => addToast('Email Notifications mock option', 'info')}
-              className="px-3 py-1.5 cursor-pointer hover:bg-[#E3E6E8] rounded-[100px] transition-colors mb-1"
-            >
-              Email settings
-            </li>
-          </ul>
+        {/* Left Side Navigation Directory */}
+        <div className="w-full md:w-[220px] flex-shrink-0">
+          <nav className="flex flex-col space-y-4" aria-label="Settings Directory">
+            
+            {/* Personal Info group */}
+            <div>
+              <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Pencil size={11} className="text-gray-400" />
+                <span>Personal Information</span>
+              </div>
+              <ul className="space-y-0.5">
+                <li>
+                  <button 
+                    onClick={() => setActiveSection('edit-profile')}
+                    className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                      activeSection === 'edit-profile' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-650'
+                    }`}
+                  >
+                    Edit profile
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setActiveSection('change-password')}
+                    className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                      activeSection === 'change-password' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-655'
+                    }`}
+                  >
+                    Change password
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => addToast('Account deletion is simulated. No action required.', 'warning')}
+                    className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-655 text-red-650 cursor-pointer"
+                  >
+                    Delete profile
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Email settings group */}
+            <div>
+              <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Mail size={11} className="text-gray-400" />
+                <span>Email Settings</span>
+              </div>
+              <ul className="space-y-0.5">
+                <li>
+                  <button 
+                    onClick={() => addToast('Email frequency options updated.', 'info')}
+                    className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-655 cursor-pointer"
+                  >
+                    Edit email settings
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => addToast('Tag watch preferences loaded.', 'info')}
+                    className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-655 cursor-pointer"
+                  >
+                    Tag watching & ignoring
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Site settings group */}
+            <div>
+              <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Sliders size={11} className="text-gray-400" />
+                <span>Site settings</span>
+              </div>
+              <ul className="space-y-0.5">
+                <li>
+                  <button 
+                    onClick={() => setActiveSection('preferences')}
+                    className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                      activeSection === 'preferences' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-655'
+                    }`}
+                  >
+                    Preferences
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setActiveSection('language')}
+                    className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                      activeSection === 'language' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-655'
+                    }`}
+                  >
+                    Language Settings
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Access group */}
+            <div>
+              <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Shield size={11} className="text-gray-400" />
+                <span>Access</span>
+              </div>
+              <ul className="space-y-0.5">
+                <li>
+                  <button 
+                    onClick={() => addToast('Redirecting to Collectives administration...', 'info')}
+                    className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-650 cursor-pointer"
+                  >
+                    Collectives
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => addToast('Single Sign-On login records verified.', 'info')}
+                    className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-650 cursor-pointer"
+                  >
+                    Logins
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* API group */}
+            <div>
+              <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                <Cpu size={11} className="text-gray-400" />
+                <span>API integrations</span>
+              </div>
+              <ul className="space-y-0.5">
+                <li>
+                  <button 
+                    onClick={() => addToast('No third-party developer integrations active.', 'info')}
+                    className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-650 cursor-pointer"
+                  >
+                    Authorized applications
+                  </button>
+                </li>
+              </ul>
+            </div>
+          </nav>
         </div>
 
         {/* Right Active Settings Panel */}
-        <div className="flex-1">
+        <div className="flex-1 min-w-0 bg-white border border-gray-200 rounded-lg p-5 md:p-6 shadow-sm">
           
-          {activeSettingsTab === 'password' ? (
-            <div>
-              <h2 className="text-[21px] font-normal mb-4 border-b pb-2">Change Password</h2>
-              
-              <div className="max-w-[400px] border rounded-[5px] p-6 bg-white shadow-sm">
-                <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                  <div className="flex flex-col gap-1">
-                    <label className="font-bold text-[15px] text-[#0C0D0E]">
-                      Current password
-                    </label>
-                    <input
-                      type="password"
-                      value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
-                      className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                        errors.currentPassword ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                      }`}
-                    />
-                    {errors.currentPassword && (
-                      <span className="text-[12px] text-red-500 mt-1">{errors.currentPassword}</span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="font-bold text-[15px] text-[#0C0D0E]">
-                      New password
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                        errors.newPassword ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                      }`}
-                    />
-                    <p className="text-[12px] text-gray-500">Must be at least 6 characters.</p>
-                    {errors.newPassword && (
-                      <span className="text-[12px] text-red-500 mt-1">{errors.newPassword}</span>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="font-bold text-[15px] text-[#0C0D0E]">
-                      Confirm new password
-                    </label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                        errors.confirmPassword ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                      }`}
-                    />
-                    {errors.confirmPassword && (
-                      <span className="text-[12px] text-red-500 mt-1">{errors.confirmPassword}</span>
-                    )}
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="px-3 py-2 bg-[#0A95FF] hover:bg-[#0074CC] text-white rounded-[3px] font-bold text-[13px] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50 transition-colors"
-                    >
-                      {isLoading ? 'Saving...' : 'Change password'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
-          ) : (
-            /* Language Settings View */
-            <div>
-              <h2 className="text-[21px] font-normal mb-4 border-b pb-2">Language Settings</h2>
-              
-              <div className="max-w-[400px] border rounded-[5px] p-6 bg-white shadow-sm">
-                <form onSubmit={handleRequestLanguage} className="space-y-4">
-                  <div className="flex flex-col gap-1">
-                    <label className="font-bold text-[15px] text-[#0C0D0E]">
-                      Interface language
-                    </label>
-                    <select
-                      value={selectedLanguage}
-                      onChange={(e) => setSelectedLanguage(e.target.value)}
-                      className="w-full p-2 text-sm border border-gray-300 rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 focus:border-[#0074CC]"
-                    >
-                      <option value="en">English (US)</option>
-                      <option value="es">Español (ES)</option>
-                      <option value="hi">हिन्दी (IN)</option>
-                      <option value="pt">Português (PT)</option>
-                      <option value="zh">中文 (CN)</option>
-                      <option value="fr">Français (FR)</option>
-                    </select>
-                  </div>
-
-                  <div className="p-3 bg-[#FDF2F5] border border-[#DE4B59] rounded-[3px]">
-                    <p className="text-[13px] text-[#C22E32]">
-                      {selectedLanguage === 'fr' 
-                        ? "Security notice: Switching to French (FR) requires verifying a 6-digit OTP code sent to your email."
-                        : `Security notice: Switching to ${selectedLanguage.toUpperCase()} requires verifying a 6-digit OTP code sent via SMS.`}
-                    </p>
-                  </div>
-
-                  <div className="pt-2">
-                    <button
-                      type="submit"
-                      disabled={isSwappingLanguage}
-                      className="px-3 py-2 bg-[#0A95FF] hover:bg-[#0074CC] text-white rounded-[3px] font-bold text-[13px] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50 transition-colors"
-                    >
-                      {isSwappingLanguage ? 'Requesting...' : 'Save changes'}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
+          {activeSection === 'preferences' && (
+            <PreferencesTab 
+              selectedTheme={selectedTheme}
+              handleThemeChange={handleThemeChange}
+              preferences={preferences}
+              handlePreferenceToggle={handlePreferenceToggle}
+              excludeInput={excludeInput}
+              setExcludeInput={setExcludeInput}
+              excludedCompanies={excludedCompanies}
+              handleAddCompany={handleAddCompany}
+              handleRemoveCompany={handleRemoveCompany}
+            />
           )}
+
+          {activeSection === 'change-password' && (
+            <SecurityTab 
+              currentPassword={currentPassword}
+              setCurrentPassword={setCurrentPassword}
+              newPassword={newPassword}
+              setNewPassword={setNewPassword}
+              confirmPassword={confirmPassword}
+              setConfirmPassword={setConfirmPassword}
+              passwordErrors={passwordErrors}
+              isPasswordLoading={isPasswordLoading}
+              handlePasswordSubmit={handlePasswordSubmit}
+            />
+          )}
+
+          {activeSection === 'language' && (
+            <LanguageTab 
+              selectedLanguage={selectedLanguage}
+              setSelectedLanguage={setSelectedLanguage}
+              isSwappingLanguage={isSwappingLanguage}
+              handleRequestLanguage={handleRequestLanguage}
+            />
+          )}
+
+          {activeSection === 'edit-profile' && (
+            <ProfileTab 
+              displayName={displayName}
+              setDisplayName={setDisplayName}
+              bioText={bioText}
+              setBioText={setBioText}
+              handleProfileSave={handleProfileSave}
+            />
+          )}
+
         </div>
       </div>
 
       {/* OTP VERIFICATION MODAL OVERLAY */}
       {isVerifyModalOpen && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-[420px] rounded-[5px] shadow-2xl p-6 relative">
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm transition-all duration-200">
+          <div className="bg-white w-full max-w-[420px] rounded-lg shadow-2xl p-6 relative transform scale-100 transition-all duration-200">
             
             <button 
               onClick={() => {
@@ -341,20 +526,20 @@ const Settings = () => {
                 setOtpCode('');
                 setDevOtp('');
               }}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-1.5 rounded-full transition-all"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
 
             <div className="flex flex-col items-center">
-              <div className="w-12 h-12 rounded-full bg-[#E1ECF4] flex items-center justify-center mb-4">
+              <div className="w-12 h-12 rounded-full bg-[#E1ECF4] flex items-center justify-center mb-4 border border-[#7AA7C7]">
                 <ShieldCheck className="text-[#0A95FF] w-6 h-6" />
               </div>
 
-              <h3 className="text-[21px] font-normal mb-2 text-center">
+              <h3 className="text-[20px] font-normal mb-2 text-center text-gray-900 font-sans">
                 Verify Identity
               </h3>
-              <p className="text-[13px] text-gray-600 text-center mb-6">
+              <p className="text-[12.5px] text-gray-600 text-center mb-6 leading-relaxed">
                 Please enter the 6-digit code sent to your {swapTarget === 'fr' ? 'Email' : 'Mobile'}.
               </p>
 
@@ -363,11 +548,11 @@ const Settings = () => {
                   <input
                     type="text"
                     maxLength={6}
-                    placeholder="Enter 6-digit code"
+                    placeholder="• • • • • •"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                     required
-                    className="w-full p-2 text-center text-lg tracking-widest border border-gray-300 rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 focus:border-[#0074CC]"
+                    className="w-full p-2.5 text-center text-xl tracking-widest border border-gray-305 border-gray-300 rounded focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 focus:border-[#0074CC]"
                   />
                 </div>
 
@@ -383,7 +568,7 @@ const Settings = () => {
                     <button
                       type="button"
                       onClick={handleResendOtp}
-                      className="text-[#0074CC] hover:text-[#0A95FF] flex items-center gap-1"
+                      className="text-[#0074CC] hover:text-[#0A95FF] flex items-center gap-1 font-semibold cursor-pointer"
                     >
                       <RefreshCw size={12} />
                       Resend Code
@@ -393,12 +578,12 @@ const Settings = () => {
 
                 {/* Dev Assistant Banner */}
                 {devOtp && (
-                  <div className="p-3 bg-[#E1ECF4] border border-[#7AA7C7] rounded-[3px]">
-                    <div className="text-[11px] font-bold text-[#0074CC] uppercase tracking-wider mb-1">
-                      Developer Mode
+                  <div className="p-3.5 bg-blue-50 border border-[#7AA7C7] rounded">
+                    <div className="text-[10px] font-bold text-[#0074CC] uppercase tracking-wider mb-1">
+                      Developer Mode Assistance
                     </div>
-                    <div className="text-[13px] text-gray-800">
-                      Auto-received OTP: <strong className="font-mono text-[14px] select-all">{devOtp}</strong>
+                    <div className="text-xs text-gray-700">
+                      Auto-received OTP: <strong className="font-mono text-[13.5px] select-all bg-white border px-1 py-0.5 rounded ml-1 text-gray-900">{devOtp}</strong>
                     </div>
                   </div>
                 )}
@@ -407,7 +592,7 @@ const Settings = () => {
                   <button
                     type="submit"
                     disabled={isVerifyingOtp || otpCode.length !== 6}
-                    className="flex-1 py-2 bg-[#0A95FF] hover:bg-[#0074CC] text-white rounded-[3px] font-bold text-[13px] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50 transition-colors"
+                    className="flex-1 py-2 bg-[#0A95FF] hover:bg-[#0074CC] text-white rounded font-bold text-xs shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors cursor-pointer"
                   >
                     {isVerifyingOtp ? 'Verifying...' : 'Verify code'}
                   </button>
@@ -418,7 +603,7 @@ const Settings = () => {
                       setOtpCode('');
                       setDevOtp('');
                     }}
-                    className="flex-1 py-2 text-[#0074CC] hover:bg-[#E1ECF4] rounded-[3px] text-[13px] transition-colors"
+                    className="flex-1 py-2 text-gray-500 hover:bg-gray-100 rounded text-xs font-bold border border-transparent hover:border-gray-250 transition-all cursor-pointer"
                   >
                     Cancel
                   </button>

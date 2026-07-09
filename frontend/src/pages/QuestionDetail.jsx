@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
-import { ChevronUp, ChevronDown, Bookmark, Clock, Share2, Flag, Trash2 } from 'lucide-react';
+import { ChevronUp, ChevronDown, Bookmark, Clock, Share2, Flag, Trash2, Eye, Check } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import rehypeSanitize from 'rehype-sanitize';
+import remarkGfm from 'remark-gfm';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import API from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import AnswerCard from '../components/common/AnswerCard';
 
 const QuestionDetail = () => {
   const { id } = useParams();
@@ -19,7 +25,7 @@ const QuestionDetail = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
 
-  const fetchQuestion = async () => {
+  const fetchQuestion = useCallback(async () => {
     try {
       setLoading(true);
       const res = await API.get(`/posts/${id}`);
@@ -30,13 +36,13 @@ const QuestionDetail = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, addToast, navigate]);
 
   useEffect(() => {
     if (id) {
       fetchQuestion();
     }
-  }, [id]);
+  }, [id, fetchQuestion]);
 
   const handleVote = async (voteType) => {
     try {
@@ -89,34 +95,34 @@ const QuestionDetail = () => {
     }
   };
 
-  const renderMarkdown = (text) => {
-    if (!text) return '';
-    // Basic sanitization
-    let escaped = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-    
-    // Parse markdown headers
-    escaped = escaped.replace(/^### (.*$)/gim, '<h4 class="text-sm font-bold mt-3 mb-1 text-gray-900">$1</h4>');
-    escaped = escaped.replace(/^## (.*$)/gim, '<h3 class="text-base font-bold mt-4 mb-2 text-gray-900">$1</h3>');
-    escaped = escaped.replace(/^# (.*$)/gim, '<h2 class="text-lg font-bold mt-5 mb-3 text-gray-900">$1</h2>');
+  const handleBookmark = async () => {
+    try {
+      const res = await API.post(`/posts/${id}/bookmark`);
+      setIsBookmarked(res.data.isBookmarked);
+      addToast(res.data.isBookmarked ? 'Question saved!' : 'Question unsaved.', 'success');
+    } catch (err) {
+      // Fallback to local toggle if API doesn't support it yet
+      setIsBookmarked(!isBookmarked);
+    }
+  };
 
-    // Parse code blocks
-    escaped = escaped.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre class="bg-gray-50 border border-gray-200 p-3 rounded font-mono text-[12px] overflow-x-auto my-3 text-gray-800">$2</pre>');
+  const handleVoteAnswer = async (commentId, voteType) => {
+    try {
+      const res = await API.post(`/posts/${id}/comment/${commentId}/vote`, { voteType });
+      setPost(res.data);
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Failed to vote on answer.', 'error');
+    }
+  };
 
-    // Parse inline code
-    escaped = escaped.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1 py-0.5 rounded font-mono text-[12px] text-red-600">$1</code>');
-
-    // Parse lists
-    escaped = escaped.replace(/^\s*\-\s+(.*$)/gim, '<li class="ml-4 list-disc">$1</li>');
-    escaped = escaped.replace(/^\s*\*\s+(.*$)/gim, '<li class="ml-4 list-disc">$1</li>');
-
-    // Parse newlines
-    escaped = escaped.replace(/\n\n/g, '</p><p class="mb-3">');
-    escaped = escaped.replace(/\n/g, '<br/>');
-
-    return `<p class="mb-3">${escaped}</p>`;
+  const handleAcceptAnswer = async (commentId) => {
+    try {
+      const res = await API.post(`/posts/${id}/accept/${commentId}`);
+      setPost(res.data);
+      addToast('Answer accepted!', 'success');
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Failed to accept answer.', 'error');
+    }
   };
 
   if (loading) {
@@ -152,7 +158,7 @@ const QuestionDetail = () => {
             {post.caption}
           </h1>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/questions/ask')}
             className="bg-[#0A95FF] hover:bg-[#0074CC] text-white px-3 py-2 rounded text-[13px] transition-colors whitespace-nowrap"
           >
             Ask Question
@@ -166,6 +172,10 @@ const QuestionDetail = () => {
           </div>
           <div>
             Active <span className="text-gray-800">{new Date(post.updatedAt).toLocaleDateString()}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Eye className="w-3.5 h-3.5" />
+            <span>Viewed <span className="text-gray-800">{post.views || 0} time{(post.views || 0) !== 1 ? 's' : ''}</span></span>
           </div>
         </div>
       </div>
@@ -200,7 +210,7 @@ const QuestionDetail = () => {
           </button>
 
           <button
-            onClick={() => setIsBookmarked(!isBookmarked)}
+            onClick={handleBookmark}
             className={`mt-4 p-2 transition-colors ${isBookmarked ? 'text-orange-500' : 'text-gray-300 hover:text-orange-500'}`}
           >
             <Bookmark size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
@@ -210,10 +220,39 @@ const QuestionDetail = () => {
         {/* Content Column */}
         <div className="flex-1 min-w-0">
           <div className="prose max-w-none mb-6">
-            <div
-              className="text-[15px] text-[#232629] leading-relaxed break-words markdown-content"
-              dangerouslySetInnerHTML={{ __html: renderMarkdown(post.description) }}
-            />
+            <div className="text-[15px] text-[#232629] leading-relaxed break-words markdown-content">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypeSanitize]}
+                components={{
+                  code({ node, inline, className, children, ...props }) {
+                    const match = /language-(\w+)/.exec(className || '');
+                    return !inline && match ? (
+                      <SyntaxHighlighter
+                        style={vscDarkPlus}
+                        language={match[1]}
+                        PreTag="div"
+                        className="my-3 rounded-md text-[13px] overflow-x-auto"
+                        {...props}
+                      >
+                        {String(children).replace(/\n$/, '')}
+                      </SyntaxHighlighter>
+                    ) : inline ? (
+                      <code className="bg-gray-100 px-1 py-0.5 rounded font-mono text-[12px] text-red-600" {...props}>{children}</code>
+                    ) : (
+                      <pre className="bg-gray-50 border border-gray-200 p-3 rounded font-mono text-[12px] overflow-x-auto my-3 text-gray-800"><code {...props}>{children}</code></pre>
+                    );
+                  },
+                  h1: ({ children }) => <h2 className="text-lg font-bold mt-5 mb-3 text-gray-900">{children}</h2>,
+                  h2: ({ children }) => <h3 className="text-base font-bold mt-4 mb-2 text-gray-900">{children}</h3>,
+                  h3: ({ children }) => <h4 className="text-sm font-bold mt-3 mb-1 text-gray-900">{children}</h4>,
+                  li: ({ children }) => <li className="ml-4 list-disc">{children}</li>,
+                  p: ({ children }) => <p className="mb-3">{children}</p>,
+                }}
+              >
+                {post.description || ''}
+              </ReactMarkdown>
+            </div>
           </div>
 
           {post.mediaUrl && (
@@ -274,8 +313,8 @@ const QuestionDetail = () => {
                   <Link to={`/profile/${postOwnerName}`} className="text-[#0074CC] hover:text-[#0A95FF] font-medium block">
                     {postOwnerName}
                   </Link>
-                  <span className="text-[11px] text-gray-500 font-bold block" title="Mock reputation">
-                    {Math.floor(Math.random() * 500) + 10}
+                  <span className="text-[11px] text-gray-500 font-bold block" title="Reputation">
+                    {post.user?.reputation || 1}
                   </span>
                 </div>
               </div>
@@ -289,51 +328,19 @@ const QuestionDetail = () => {
             </h2>
 
             <div className="space-y-4">
-              {post.comments && post.comments.map((comment) => {
-                const commentOwnerName = comment.user?.username || 'Unknown User';
-                const isCommentOwner = user?._id === comment.user?._id || user?._id === comment.user;
-
-                return (
-                  <div key={comment._id} className="flex gap-4 p-4 bg-white border border-gray-200 rounded-[3px]">
-                    <div className="flex-1 min-w-0">
-                      <div
-                        className="text-[14px] text-[#232629] leading-relaxed break-words mb-3 markdown-content"
-                        dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.text) }}
-                      />
-
-                      <div className="flex justify-between items-center gap-4 text-xs">
-                        <div className="flex gap-3 text-gray-500">
-                          <button className="hover:text-gray-800 cursor-pointer">Share</button>
-                          {(user?.role === 'admin' || isCommentOwner || post.user?._id === user?._id) && (
-                            <button
-                              onClick={() => handleDeleteAnswer(comment._id)}
-                              className="text-red-600 hover:text-red-800 font-medium cursor-pointer"
-                            >
-                              Delete
-                            </button>
-                          )}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          {comment.user?.avatar ? (
-                            <img src={comment.user.avatar} alt={commentOwnerName} className="w-5 h-5 rounded-sm object-cover" />
-                          ) : (
-                            <div className="w-5 h-5 rounded-sm bg-blue-600 text-white flex items-center justify-center font-bold text-[9px] uppercase">
-                              {commentOwnerName.charAt(0)}
-                            </div>
-                          )}
-                          <Link to={`/profile/${commentOwnerName}`} className="text-[#0074CC] hover:text-[#0A95FF] font-medium">
-                            {commentOwnerName}
-                          </Link>
-                          <span className="text-gray-400">
-                            answered {new Date(comment.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {post.comments && post.comments.map((comment) => (
+                <AnswerCard
+                  key={comment._id}
+                  comment={comment}
+                  currentUser={user}
+                  postOwnerId={post.user?._id || post.user}
+                  isAccepted={post.acceptedAnswer && post.acceptedAnswer.toString() === comment._id.toString()}
+                  isQuestionOwner={post.user?._id === user?._id || post.user === user?._id}
+                  onDelete={handleDeleteAnswer}
+                  onVote={handleVoteAnswer}
+                  onAccept={handleAcceptAnswer}
+                />
+              ))}
             </div>
           </div>
 
