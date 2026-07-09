@@ -173,6 +173,8 @@ exports.register = async (req, res, next) => {
       email: user.email,
       phone: user.phone || '',
       role: user.role,
+      reputation: user.reputation || 1,
+      savedPosts: user.savedPosts || [],
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       language: user.language,
@@ -271,6 +273,8 @@ exports.login = async (req, res, next) => {
       email: user.email,
       phone: user.phone || '',
       role: user.role,
+      reputation: user.reputation || 1,
+      savedPosts: user.savedPosts || [],
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       language: user.language,
@@ -589,7 +593,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
 exports.getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select(
-      'username email phone role isEmailVerified isPhoneVerified avatar bio language createdAt'
+      'username email phone role isEmailVerified isPhoneVerified avatar bio language reputation savedPosts createdAt'
     );
     res.json(user);
   } catch (error) {
