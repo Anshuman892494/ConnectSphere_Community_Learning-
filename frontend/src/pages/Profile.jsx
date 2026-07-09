@@ -88,11 +88,15 @@ const Profile = () => {
     );
   }
 
-  // Calculate mock stats based on posts
-  const reputation = 1 + posts.reduce((acc, p) => acc + (p.likes?.length || 0) * 10, 0);
+  // Calculate stats based on posts and user profile
+  const reputation = profileUser?.reputation || 1;
   const answers = posts.reduce((acc, p) => acc + (p.comments?.length || 0), 0);
   const questions = posts.length;
   const reached = '~' + Math.floor((reputation * 13) / 1000) + 'k';
+
+  const goldBadges = Math.floor(reputation / 500);
+  const silverBadges = Math.floor((reputation % 500) / 100);
+  const bronzeBadges = Math.floor((reputation % 100) / 25);
 
   return (
     <div className="max-w-[1100px] mx-auto text-[13px] text-gray-800 p-4 sm:p-6 font-sans">
@@ -174,6 +178,22 @@ const Profile = () => {
               <div className="flex flex-col">
                 <span className="text-[17px] font-medium text-gray-900">{questions}</span>
                 <span className="text-gray-500">questions</span>
+              </div>
+            </div>
+
+            <h2 className="text-[21px] text-gray-900 mb-2 font-medium">Badges</h2>
+            <div className="border border-gray-300 rounded p-3 bg-white flex flex-col gap-2.5 mb-6 shadow-sm">
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-2.5 bg-[#ffcc01] rounded-full"></span>
+                <span className="font-semibold text-gray-800 text-[13px]">{goldBadges} Gold Badges</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-2.5 bg-[#b4b8bc] rounded-full"></span>
+                <span className="font-semibold text-gray-800 text-[13px]">{silverBadges} Silver Badges</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="w-2.5 h-2.5 bg-[#d1a684] rounded-full"></span>
+                <span className="font-semibold text-gray-800 text-[13px]">{bronzeBadges} Bronze Badges</span>
               </div>
             </div>
             

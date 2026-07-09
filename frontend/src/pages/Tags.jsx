@@ -14,30 +14,9 @@ const Tags = () => {
   const fetchTagsAndCounts = async () => {
     try {
       setLoading(true);
-      const res = await API.get('/posts');
-      const posts = res.data;
-      
-      const tagMap = {};
-      posts.forEach(post => {
-        const postTags = post.tags && post.tags.length > 0 ? post.tags : (post.type === 'text' ? ['javascript', 'react'] : ['media', 'discussion']);
-        postTags.forEach(tag => {
-          const t = tag.trim();
-          if (t) {
-            const normalized = t.toLowerCase();
-            if (!tagMap[normalized]) {
-              tagMap[normalized] = { original: t, count: 0 };
-            }
-            tagMap[normalized].count += 1;
-          }
-        });
-      });
-
-      const tagList = Object.keys(tagMap).map(key => ({
-        name: tagMap[key].original,
-        count: tagMap[key].count
-      })).sort((a, b) => b.count - a.count);
-
-      setTags(tagList);
+      const res = await API.get('/posts/tags');
+      // The backend returns an array of { name: string, count: number } objects
+      setTags(res.data || []);
     } catch (err) {
       addToast('Failed to load tags directory.', 'error');
     } finally {
