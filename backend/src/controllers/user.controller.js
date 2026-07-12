@@ -6,7 +6,9 @@ const Post = require('../models/Post');
 // @access  Private
 exports.getUserProfile = async (req, res, next) => {
   try {
-    const user = await User.findOne({ username: req.params.username }).select('-password -emailVerificationCode -phoneVerificationCode -refreshToken');
+    const user = await User.findOne({ username: req.params.username })
+      .select('-password -emailVerificationCode -phoneVerificationCode -refreshToken')
+      .populate('friends', 'username avatar bio');
     
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -73,8 +75,57 @@ exports.getUsers = async (req, res, next) => {
   try {
     const users = await User.find({})
       .select('-password -emailVerificationCode -phoneVerificationCode -refreshToken')
+      .populate('friends', 'username avatar bio')
       .sort({ createdAt: -1 });
     res.json(users);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle friend status (add/remove)
+// @route   POST /api/users/:id/friend
+// @access  Private
+exports.toggleFriend = async (req, res, next) => {
+  try {
+    const targetUserId = req.params.id;
+    const currentUserId = req.user.id;
+
+    if (targetUserId === currentUserId) {
+      return res.status(400).json({ message: 'You cannot friend yourself' });
+    }
+
+    const targetUser = await User.findById(targetUserId);
+    const currentUser = await User.findById(currentUserId);
+
+    if (!targetUser || !currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Initialize friends array if they don't exist
+    if (!currentUser.friends) currentUser.friends = [];
+    if (!targetUser.friends) targetUser.friends = [];
+
+    const isAlreadyFriend = currentUser.friends.includes(targetUserId);
+
+    if (isAlreadyFriend) {
+      // Remove connection (mutual)
+      currentUser.friends = currentUser.friends.filter(id => id.toString() !== targetUserId);
+      targetUser.friends = targetUser.friends.filter(id => id.toString() !== currentUserId);
+    } else {
+      // Add connection (mutual)
+      currentUser.friends.push(targetUserId);
+      targetUser.friends.push(currentUserId);
+    }
+
+    await currentUser.save();
+    await targetUser.save();
+
+    res.json({
+      message: isAlreadyFriend ? 'Friend removed successfully' : 'Friend added successfully',
+      isFriend: !isAlreadyFriend,
+      friendsCount: currentUser.friends.length
+    });
   } catch (error) {
     next(error);
   }

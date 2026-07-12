@@ -6,10 +6,50 @@ const User = require('../models/User');
 // @access  Private
 exports.createPost = async (req, res, next) => {
   try {
-    const { type, mediaUrl, caption, description, tags } = req.body;
+    const { type, mediaUrl, caption, description, tags, isSocial } = req.body;
+
+    const isSocialPost = isSocial === true || isSocial === 'true';
+
+    if (isSocialPost) {
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      const friendCount = user.friends ? user.friends.length : 0;
+
+      // Calculate start of today in local/server time
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      // Count social posts created by this user today
+      const postsToday = await Post.countDocuments({
+        user: req.user.id,
+        isSocial: true,
+        createdAt: { $gte: startOfToday }
+      });
+
+      if (friendCount === 0) {
+        return res.status(403).json({
+          message: 'You have no friends. Users with no friends are not allowed to post on the public social page. Add friends to start posting!'
+        });
+      } else if (friendCount === 1) {
+        if (postsToday >= 1) {
+          return res.status(403).json({
+            message: 'You have only 1 friend and have reached your posting limit of 1 post per day. Add more friends to post more!'
+          });
+        }
+      } else if (friendCount >= 2 && friendCount <= 10) {
+        if (postsToday >= 2) {
+          return res.status(403).json({
+            message: 'You have between 2 and 10 friends and have reached your posting limit of 2 posts per day. Add more than 10 friends for unlimited posting!'
+          });
+        }
+      }
+    }
 
     if (!caption || !caption.trim()) {
-      return res.status(400).json({ message: 'Question title (caption) is required' });
+      return res.status(400).json({ message: isSocialPost ? 'Caption is required' : 'Question title (caption) is required' });
     }
 
     let tagsArray = [];
@@ -28,12 +68,13 @@ exports.createPost = async (req, res, next) => {
       caption: caption.trim(),
       description: description || '',
       tags: tagsArray,
+      isSocial: isSocialPost,
       upvotes: [],
       downvotes: [],
       likes: []
     });
 
-    // Give +5 reputation for asking a question
+    // Give +5 reputation for asking a question/posting
     await User.findByIdAndUpdate(req.user.id, { $inc: { reputation: 5 } });
 
     const populatedPost = await Post.findById(post._id).populate(
@@ -60,6 +101,13 @@ exports.getPosts = async (req, res, next) => {
     let query = {};
     if (tag) {
       query.tags = { $regex: new RegExp(`^${tag}$`, 'i') };
+    }
+
+    // Filter by social space posts
+    if (req.query.isSocial !== undefined) {
+      query.isSocial = req.query.isSocial === 'true';
+    } else {
+      query.isSocial = { $ne: true };
     }
 
     let sortObj = {};
@@ -558,3 +606,78 @@ exports.getTags = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Increment shares count
+// @route   POST /api/posts/:id/share
+// @access  Private
+exports.sharePost = async (req, res, next) => {
+  try {
+    const post = await Post.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { sharesCount: 1 } },
+      { new: true }
+    );
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+    res.json({ sharesCount: post.sharesCount || 0 });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get popular/trending questions for sidebar
+// @route   GET /api/posts/popular
+// @access  Private
+exports.getPopularQuestions = async (req, res, next) => {
+  try {
+    const limit = parseInt(req.query.limit) || 5;
+
+    // Use aggregation to rank by engagement score
+    const popular = await Post.aggregate([
+      { $match: { isSocial: { $ne: true } } },
+      {
+        $addFields: {
+          score: {
+            $add: [
+              { $size: { $ifNull: ['$upvotes', []] } },
+              { $multiply: [{ $size: { $ifNull: ['$comments', []] } }, 2] },
+              { $ifNull: ['$views', 0] },
+              { $multiply: [{ $size: { $ifNull: ['$likes', []] } }, 1.5] }
+            ]
+          }
+        }
+      },
+      { $sort: { score: -1, createdAt: -1 } },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'users',
+          localField: 'user',
+          foreignField: '_id',
+          as: 'user'
+        }
+      },
+      { $unwind: '$user' },
+      {
+        $project: {
+          _id: 1,
+          caption: 1,
+          tags: 1,
+          score: 1,
+          upvotes: { $size: { $ifNull: ['$upvotes', []] } },
+          comments: { $size: { $ifNull: ['$comments', []] } },
+          views: 1,
+          createdAt: 1,
+          'user.username': 1,
+          'user.avatar': 1
+        }
+      }
+    ]);
+
+    res.json(popular);
+  } catch (error) {
+    next(error);
+  }
+};
+
