@@ -4,6 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useToast } from '../contexts/ToastContext';
 import API from '../services/api';
 import { KeyRound, Copy, Check } from 'lucide-react';
+import logo from '../assets/Logo.png';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const ForgotPassword = () => {
@@ -60,11 +61,14 @@ const ForgotPassword = () => {
       
       {/* Logo Section */}
       <div className="flex flex-col items-center mb-6">
-        <KeyRound className="text-[#F48024] w-10 h-10 mb-3" />
-        <h2 className="text-[27px] font-normal tracking-tight text-[#242729] mb-4">
-          Reset your password
-        </h2>
-        <p className="text-[13px] text-[#525960] max-w-[300px] text-center">
+        <img src={logo} alt="ConnectSphere Logo" className="w-12 h-12 object-contain mb-4" />
+        <div className="flex items-center gap-2 mb-2">
+          <KeyRound className="text-[#F48024] w-6 h-6" />
+          <h2 className="text-[27px] font-normal tracking-tight text-[#242729]">
+            Reset your password
+          </h2>
+        </div>
+        <p className="text-[13px] text-[#525960] max-w-[300px] text-center mt-2">
           Enter your email or phone number to reset your password.
         </p>
       </div>

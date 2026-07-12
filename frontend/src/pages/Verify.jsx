@@ -5,6 +5,7 @@ import { ShieldCheck } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { logout, updateUser } from '../store/authSlice';
 import API from '../services/api';
+import logo from '../assets/Logo.png';
 import { useLanguage } from '../contexts/LanguageContext';
 
 const Verify = () => {
@@ -195,10 +196,13 @@ const Verify = () => {
       
       {/* Logo Area */}
       <div className="flex flex-col items-center mb-6">
-        <ShieldCheck className="text-[#F48024] w-10 h-10 mb-3" />
-        <h2 className="text-[27px] font-normal tracking-tight text-[#242729]">
-          Verify your account
-        </h2>
+        <img src={logo} alt="ConnectSphere Logo" className="w-12 h-12 object-contain mb-4" />
+        <div className="flex items-center gap-2 mb-2">
+          <ShieldCheck className="text-[#F48024] w-6 h-6" />
+          <h2 className="text-[27px] font-normal tracking-tight text-[#242729]">
+            Verify your account
+          </h2>
+        </div>
       </div>
 
       <div className="w-full max-w-[316px]">

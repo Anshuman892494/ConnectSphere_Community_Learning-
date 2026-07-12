@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import logo from '../../assets/Logo.png';
 
 const Footer = () => {
   return (
@@ -8,9 +9,7 @@ const Footer = () => {
         
         {/* Left: Brand Logo & Icon */}
         <div className="flex-shrink-0 flex items-start gap-2">
-          <svg className="w-8 h-9 text-[#F48024]" viewBox="0 0 26 31" fill="currentColor">
-            <path d="m22.18 16.32.05.02-.02.01za19 19 0 0 0-2.45 4.14l-.03.07q-.94 2.19-1.29 4.6v.03a18 18 0 0 0-.05 4.85H.01v-4.88h15.94l.1-.6L.69 20.48l1.28-4.7 15.55 4.1.22-.46-13.96-7.96 2.47-4.22 14.16 8.07.34-.4L9.15 3.47 12.65 0l11.78 11.64 1.25 1.23q-1.97 1.5-3.5 3.44" />
-          </svg>
+          <img src={logo} alt="ConnectSphere Logo" className="w-8 h-8 object-contain" />
         </div>
 
         {/* Center: Footnote columns */}
