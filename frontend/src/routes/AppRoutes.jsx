@@ -14,6 +14,7 @@ import QuestionDetail from '../pages/QuestionDetail';
 import Users from '../pages/Users';
 import Tags from '../pages/Tags';
 import AskQuestion from '../pages/AskQuestion';
+import SocialSpace from '../pages/SocialSpace';
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
@@ -56,6 +57,7 @@ const AppRoutes = () => {
           {/* Main User Dashboard / Feed */}
           <Route path="/" element={<Feed />} />
           <Route path="/questions" element={<Feed />} />
+          <Route path="/social" element={<SocialSpace />} />
           <Route path="/questions/ask" element={<AskQuestion />} />
           <Route path="/questions/:id" element={<QuestionDetail />} />
           <Route path="/users" element={<Users />} />

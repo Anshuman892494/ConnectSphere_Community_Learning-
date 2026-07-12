@@ -49,6 +49,16 @@ const Profile = () => {
     }
   };
 
+  const handleToggleFriend = async () => {
+    try {
+      const res = await API.post(`/users/${profileUser._id}/friend`);
+      addToast(res.data.message, 'success');
+      fetchProfile();
+    } catch (err) {
+      addToast('Failed to change friendship status', 'error');
+    }
+  };
+
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -98,6 +108,8 @@ const Profile = () => {
   const silverBadges = Math.floor((reputation % 500) / 100);
   const bronzeBadges = Math.floor((reputation % 100) / 25);
 
+  const isFriend = profileUser?.friends?.some(f => f._id === loggedInUser?._id);
+
   return (
     <div className="max-w-[1100px] mx-auto text-[13px] text-gray-800 p-4 sm:p-6 font-sans">
       
@@ -118,12 +130,23 @@ const Profile = () => {
             <h1 className="text-[34px] font-medium text-gray-900 leading-tight">
               {profileUser.username}
             </h1>
-            {isOwnProfile && (
+            {isOwnProfile ? (
               <button 
                 onClick={() => setIsEditModalOpen(true)}
                 className="flex items-center gap-1 border border-gray-400 rounded px-2 py-1 text-gray-600 hover:bg-gray-100 transition-colors shadow-sm bg-white"
               >
                 <Edit2 size={14} /> <span className="font-medium text-[12px]">Edit profile</span>
+              </button>
+            ) : (
+              <button
+                onClick={handleToggleFriend}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded text-xs font-bold transition-all shadow-sm border ${
+                  isFriend
+                    ? 'bg-red-50 text-red-600 hover:bg-red-100 border-red-200'
+                    : 'bg-[#e1ecf4] text-[#39739d] hover:bg-[#b3d3ea] border-[#7aa7c7]'
+                }`}
+              >
+                {isFriend ? 'Unfriend' : 'Add Friend'}
               </button>
             )}
           </div>
@@ -195,6 +218,28 @@ const Profile = () => {
                 <span className="w-2.5 h-2.5 bg-[#d1a684] rounded-full"></span>
                 <span className="font-semibold text-gray-800 text-[13px]">{bronzeBadges} Bronze Badges</span>
               </div>
+            </div>
+
+            <h2 className="text-[21px] text-gray-900 mb-2 font-medium">Friends ({profileUser.friends?.length || 0})</h2>
+            <div className="border border-gray-300 rounded p-3 bg-white flex flex-col gap-2 mb-6 shadow-sm max-h-[200px] overflow-y-auto">
+              {!profileUser.friends || profileUser.friends.length === 0 ? (
+                <span className="text-gray-400 italic">No friends added yet.</span>
+              ) : (
+                profileUser.friends.map(friend => (
+                  <div key={friend._id} className="flex items-center gap-2">
+                    {friend.avatar ? (
+                      <img src={friend.avatar} alt={friend.username} className="w-6 h-6 rounded-full object-cover" />
+                    ) : (
+                      <div className="w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-[9px] uppercase">
+                        {friend.username.charAt(0)}
+                      </div>
+                    )}
+                    <Link to={`/profile/${friend.username}`} className="text-[#0074CC] hover:text-[#0A95FF] truncate font-medium">
+                      {friend.username}
+                    </Link>
+                  </div>
+                ))
+              )}
             </div>
             
             <h2 className="text-[21px] text-gray-900 mb-2 font-medium">Top tags</h2>

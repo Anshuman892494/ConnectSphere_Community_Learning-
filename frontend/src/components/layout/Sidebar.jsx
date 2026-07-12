@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Globe, X } from 'lucide-react';
+import { Globe, X, Camera } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { closeMobileSidebar } from '../../store/themeSlice';
 
@@ -47,6 +47,25 @@ const Sidebar = () => {
           <>
             <Globe size={16} className={isActive ? 'text-gray-900' : 'text-gray-400'} />
             <span className="ml-1">Questions</span>
+          </>
+        )}
+      </NavLink>
+
+      <NavLink
+        to="/social"
+        onClick={handleLinkClick}
+        className={({ isActive }) =>
+          `flex items-center gap-1 py-2 pl-2 pr-1 transition-colors ${
+            isActive
+              ? 'font-bold text-gray-900 bg-[#F1F2F3] border-r-[3px] border-[#F48024]'
+              : 'hover:text-gray-900 hover:bg-gray-100/50'
+          }`
+        }
+      >
+        {({ isActive }) => (
+          <>
+            <Camera size={16} className={isActive ? 'text-gray-900' : 'text-gray-400'} />
+            <span className="ml-1">Social Space</span>
           </>
         )}
       </NavLink>
