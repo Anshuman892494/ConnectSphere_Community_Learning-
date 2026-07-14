@@ -118,4 +118,137 @@ body {
   animation: float-reverse 15s ease-in-out infinite;
 }
 
+/* ==========================================================
+   PREMIUM DARK MODE THEME OVERRIDES (VIBRANT SLEEK STYLE)
+   ========================================================== */
+.dark, .dark body {
+  background-color: #0b0f19 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Global Background Elements */
+.dark .bg-white,
+.dark .bg-\[\#f8f9f9\],
+.dark .bg-gray-50,
+.dark .bg-slate-50\/50,
+.dark .bg-neutral-50,
+.dark .bg-gray-100\/50,
+.dark aside,
+.dark nav,
+.dark main {
+  background-color: #121824 !important;
+  color: #e2e8f0 !important;
+}
+
+/* Global Border Colors */
+.dark .border,
+.dark .border-b,
+.dark .border-t,
+.dark .border-r,
+.dark .border-l,
+.dark .border-gray-200,
+.dark .border-gray-305,
+.dark .border-gray-300,
+.dark .border-\[\#e3e6e8\],
+.dark .border-neutral-200,
+.dark .border-neutral-300,
+.dark .border-slate-200,
+.dark hr {
+  border-color: #1e293b !important;
+}
+
+/* Primary Text & Headings */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6,
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-neutral-900,
+.dark .text-slate-800 {
+  color: #f8fafc !important;
+}
+
+/* Secondary / Descriptive Text */
+.dark .text-gray-600,
+.dark .text-gray-500,
+.dark .text-gray-650,
+.dark .text-gray-655,
+.dark .text-neutral-600,
+.dark .text-neutral-500,
+.dark .text-slate-500,
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Hover and active states background styling */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover,
+.dark .hover\:bg-gray-100\/50:hover,
+.dark .hover\:bg-\[\#e3e6e8\]:hover,
+.dark .bg-\[\#F1F2F3\],
+.dark .bg-gray-50 {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+}
+
+/* Forms, input fields, selects and options */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #0b0f19 !important;
+  color: #f8fafc !important;
+  border-color: #1e293b !important;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+.dark input:focus,
+.dark textarea:focus,
+.dark select:focus {
+  border-color: #38bdf8 !important;
+  background-color: #0b0f19 !important;
+}
+
+/* Brand logo and static text fixes */
+.dark .text-black {
+  color: #f8fafc !important;
+}
+
+/* Question tag styling contrast improvements */
+.dark .bg-\[\#E1ECF4\] {
+  background-color: #1e293b !important;
+  color: #38bdf8 !important;
+}
+
+.dark .hover\:bg-\[\#D0E3F1\]:hover {
+  background-color: #334155 !important;
+}
+
+/* Modals overlays & drawers */
+.dark .bg-white\/60,
+.dark .bg-white\/90,
+.dark .bg-white {
+  background-color: #121824 !important;
+}
+
+.dark .shadow-2xl,
+.dark .shadow-xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Popular Network Question badges adjustments */
+.dark .text-\[\#39739D\] {
+  color: #38bdf8 !important;
+}
+
+.dark .bg-\[\#E1ECF4\] {
+  background-color: #1e293b !important;
+}
+
 
