@@ -154,4 +154,8 @@ UserSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
+// Indexes for performance optimization
+UserSchema.index({ friends: 1 });
+UserSchema.index({ lastForgotPasswordRequest: 1 });
+
 module.exports = mongoose.model('User', UserSchema);
