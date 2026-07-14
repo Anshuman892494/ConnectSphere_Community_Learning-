@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const { sendOTPEmail, sendPasswordResetEmail, sendLoginOTPEmail } = require('../utils/sendEmail');
+const { sendSMS } = require('../utils/sendSMS');
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
@@ -144,12 +145,17 @@ exports.register = async (req, res, next) => {
     // Send email verification OTP
     await sendOTPEmail(email, emailOtp, username);
 
-    // Print OTPs to server console for testing
-    console.log('\n=========================================');
-    console.log(`[DEV ONLY] OTP codes for ${username}:`);
-    console.log(`Email OTP: ${emailOtp}`);
-    console.log(`Phone OTP: ${phoneOtp}`);
-    console.log('=========================================\n');
+    // Send SMS verification OTP if phone is provided
+    if (phone) {
+      await sendSMS(phone, `Your ConnectSphere phone verification code is: ${phoneOtp}`);
+    } else {
+      // Print OTPs to server console for testing if phone is not provided
+      console.log('\n=========================================');
+      console.log(`[DEV ONLY] OTP codes for ${username}:`);
+      console.log(`Email OTP: ${emailOtp}`);
+      console.log(`Phone OTP: ${phoneOtp}`);
+      console.log('=========================================\n');
+    }
 
     // Generate tokens
     const accessToken = generateAccessToken(user._id);
@@ -498,7 +504,11 @@ exports.resendPhoneCode = async (req, res, next) => {
     user.phoneVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    console.log(`[DEV ONLY] Resent SMS OTP: ${code}`);
+    if (user.phone) {
+      await sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${code}`);
+    } else {
+      console.log(`[DEV ONLY] Resent SMS OTP: ${code}`);
+    }
 
     res.json({
       message: 'Verification code sent via SMS',
@@ -558,6 +568,11 @@ exports.updateVerificationContacts = async (req, res, next) => {
     // Send email verification OTP if updated
     if (emailChanged) {
       await sendOTPEmail(user.email, user.emailVerificationCode, user.username);
+    }
+
+    // Send SMS verification OTP if phone was updated
+    if (devOtp.phoneOtp) {
+      await sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${devOtp.phoneOtp}`);
     }
 
     if (devOtp.emailOtp || devOtp.phoneOtp) {
@@ -736,9 +751,7 @@ exports.requestLanguageChange = async (req, res, next) => {
       if (!user.phone) {
         return res.status(400).json({ message: 'Please register a mobile number first to change your language settings' });
       }
-      console.log(`\n=========================================`);
-      console.log(`[SMS GATEWAY] Sent Language Swap OTP to ${user.phone} for switching to ${language}: ${otpCode}`);
-      console.log(`=========================================\n`);
+      await sendSMS(user.phone, `Your ConnectSphere verification code for switching language to ${language.toUpperCase()} is: ${otpCode}`);
     }
 
     res.json({
