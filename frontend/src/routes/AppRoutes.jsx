@@ -1,26 +1,33 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Routes, Route, Outlet } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 
-// Pages
-import Login from '../pages/Login';
-import Register from '../pages/Register';
-import Feed from '../pages/Feed';
-import Verify from '../pages/Verify';
-import ForgotPassword from '../pages/ForgotPassword';
-import Settings from '../pages/Settings';
-import Profile from '../pages/Profile';
-import QuestionDetail from '../pages/QuestionDetail';
-import Users from '../pages/Users';
-import Tags from '../pages/Tags';
-import AskQuestion from '../pages/AskQuestion';
-import SocialSpace from '../pages/SocialSpace';
+// Lazy-loaded Pages
+const Login = lazy(() => import('../pages/Login'));
+const Register = lazy(() => import('../pages/Register'));
+const Feed = lazy(() => import('../pages/Feed'));
+const Verify = lazy(() => import('../pages/Verify'));
+const ForgotPassword = lazy(() => import('../pages/ForgotPassword'));
+const Settings = lazy(() => import('../pages/Settings'));
+const Profile = lazy(() => import('../pages/Profile'));
+const QuestionDetail = lazy(() => import('../pages/QuestionDetail'));
+const Users = lazy(() => import('../pages/Users'));
+const Tags = lazy(() => import('../pages/Tags'));
+const AskQuestion = lazy(() => import('../pages/AskQuestion'));
+const SocialSpace = lazy(() => import('../pages/SocialSpace'));
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
 import Navbar from '../components/layout/Navbar';
 import Footer from '../components/layout/Footer';
 import PhoneVerificationModal from '../components/common/PhoneVerificationModal';
+
+const PageLoader = () => (
+  <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
+    <div className="w-10 h-10 border-4 border-[#0A95FF] border-t-transparent rounded-full animate-spin"></div>
+    <span className="text-gray-500 text-xs font-semibold">Loading Page...</span>
+  </div>
+);
 
 const DashboardLayout = () => {
   return (
@@ -40,36 +47,38 @@ const DashboardLayout = () => {
 
 const AppRoutes = () => {
   return (
-    <Routes>
-      {/* Public Pages */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
+    <Suspense fallback={<PageLoader />}>
+      <Routes>
+        {/* Public Pages */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
-      {/* Verification page (accessible only to logged in but unverified users) */}
-      <Route element={<ProtectedRoute allowUnverified={true} />}>
-        <Route path="/verify" element={<Verify />} />
-      </Route>
-
-      {/* Protected Routes Group */}
-      <Route element={<ProtectedRoute />}>
-        <Route element={<DashboardLayout />}>
-          {/* Main User Dashboard / Feed */}
-          <Route path="/" element={<Feed />} />
-          <Route path="/questions" element={<Feed />} />
-          <Route path="/social" element={<SocialSpace />} />
-          <Route path="/questions/ask" element={<AskQuestion />} />
-          <Route path="/questions/:id" element={<QuestionDetail />} />
-          <Route path="/users" element={<Users />} />
-          <Route path="/tags" element={<Tags />} />
-          <Route path="/profile/:username" element={<Profile />} />
-          <Route path="/settings" element={<Settings />} />
+        {/* Verification page (accessible only to logged in but unverified users) */}
+        <Route element={<ProtectedRoute allowUnverified={true} />}>
+          <Route path="/verify" element={<Verify />} />
         </Route>
-      </Route>
 
-      {/* Fallback route */}
-      <Route path="*" element={<Login />} />
-    </Routes>
+        {/* Protected Routes Group */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<DashboardLayout />}>
+            {/* Main User Dashboard / Feed */}
+            <Route path="/" element={<Feed />} />
+            <Route path="/questions" element={<Feed />} />
+            <Route path="/social" element={<SocialSpace />} />
+            <Route path="/questions/ask" element={<AskQuestion />} />
+            <Route path="/questions/:id" element={<QuestionDetail />} />
+            <Route path="/users" element={<Users />} />
+            <Route path="/tags" element={<Tags />} />
+            <Route path="/profile/:username" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
+        </Route>
+
+        {/* Fallback route */}
+        <Route path="*" element={<Login />} />
+      </Routes>
+    </Suspense>
   );
 };
 
