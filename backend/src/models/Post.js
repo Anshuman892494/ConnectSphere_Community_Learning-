@@ -97,6 +97,8 @@ const PostSchema = new mongoose.Schema(
   {
     timestamps: true,
   }
+);
+
 // Indexes for performance optimization
 PostSchema.index({ user: 1 });
 PostSchema.index({ isSocial: 1, createdAt: -1 });

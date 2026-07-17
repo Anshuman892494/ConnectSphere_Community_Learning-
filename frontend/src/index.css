@@ -167,7 +167,11 @@ body {
 .dark .text-gray-900,
 .dark .text-gray-800,
 .dark .text-neutral-900,
-.dark .text-slate-800 {
+.dark .text-slate-800,
+.dark .text-\[\#0c0d0e\],
+.dark .text-\[\#0C0D0E\],
+.dark .text-\[\#242729\],
+.dark .text-\[\#232629\] {
   color: #f8fafc !important;
 }
 
@@ -179,7 +183,10 @@ body {
 .dark .text-neutral-600,
 .dark .text-neutral-500,
 .dark .text-slate-500,
-.dark .text-slate-600 {
+.dark .text-slate-600,
+.dark .text-\[\#3b4045\],
+.dark .text-\[\#3B4045\],
+.dark .text-\[\#525960\] {
   color: #94a3b8 !important;
 }
 

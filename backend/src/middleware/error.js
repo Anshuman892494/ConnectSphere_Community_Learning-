@@ -1,9 +1,21 @@
+const fs = require('fs');
+const path = require('path');
+
 const errorHandler = (err, req, res, next) => {
   let error = { ...err };
   error.message = err.message;
 
   // Log to console for dev
   console.error(err.stack || err);
+
+  // Log to error.log file for inspection
+  try {
+    const logPath = path.join(__dirname, '../../error.log');
+    const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}\n${err.stack || err}\n\n`;
+    fs.appendFileSync(logPath, logMsg);
+  } catch (logErr) {
+    console.error('Failed to write to error.log', logErr);
+  }
 
   // Mongoose bad ObjectId
   if (err.name === 'CastError') {
