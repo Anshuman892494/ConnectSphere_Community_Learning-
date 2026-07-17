@@ -16,6 +16,24 @@ exports.getUserProfile = async (req, res, next) => {
 
     const isOwnProfile = req.user && user._id.toString() === req.user.id.toString();
     const userObj = user.toObject();
+
+    // Attach public lastSeenTime (the time of the most recent login)
+    if (user.loginHistory && user.loginHistory.length > 0) {
+      userObj.lastSeenTime = user.loginHistory[user.loginHistory.length - 1].loginTime;
+    } else {
+      userObj.lastSeenTime = user.updatedAt; // fallback
+    }
+
+    // Calculate total unique days visited from loginHistory
+    let visitedDaysCount = 1;
+    if (user.loginHistory && user.loginHistory.length > 0) {
+      const uniqueDays = new Set(
+        user.loginHistory.map(log => new Date(log.loginTime).toDateString())
+      );
+      visitedDaysCount = uniqueDays.size;
+    }
+    userObj.visitedDaysCount = visitedDaysCount;
+
     if (!isOwnProfile) {
       delete userObj.loginHistory;
     }
