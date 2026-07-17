@@ -1,12 +1,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Hash } from 'lucide-react';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 const SearchBar = () => {
   const [query, setQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const navigate = useNavigate();
   const containerRef = useRef(null);
+  const { t } = useLanguage();
 
   const popularTags = ['javascript', 'react', 'css', 'html', 'node.js', 'tailwindcss', 'mongodb', 'express'];
 
@@ -53,7 +55,7 @@ const SearchBar = () => {
           }}
           onFocus={() => setShowSuggestions(true)}
           className="block w-full pl-9 pr-9 py-1.5 border border-[#babfc4] rounded bg-white placeholder-gray-400 focus:outline-none focus:ring-[4px] focus:ring-[#0074cc]/15 focus:border-[#379fef] text-[13px] text-gray-800 transition-all duration-100"
-          placeholder="Search tags or questions..."
+          placeholder={t('searchPlaceholder')}
         />
         {query && (
           <button

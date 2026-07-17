@@ -4,10 +4,12 @@ import ProductsDropdown from './ProductsDropdown';
 import ForTeamsPopover from './ForTeamsPopover';
 import AboutPopover from './AboutPopover';
 import logo from '../../../assets/Logo.png';
+import { useLanguage } from '../../../contexts/LanguageContext';
 
 const BrandLogo = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const containerRef = useRef(null);
+  const { t } = useLanguage();
 
   const toggleMenu = (menuName) => {
     setActiveMenu((prev) => (prev === menuName ? null : menuName));
@@ -47,7 +49,7 @@ const BrandLogo = () => {
             activeMenu === 'about' ? 'bg-[#e3e6e8] text-[#232629] font-medium' : ''
           }`}
         >
-          About
+          {t('about')}
         </button>
 
         {/* Products Trigger */}
@@ -58,7 +60,7 @@ const BrandLogo = () => {
             activeMenu === 'products' ? 'bg-[#e3e6e8] text-[#232629] font-medium' : ''
           }`}
         >
-          Products
+          {t('products')}
         </button>
 
         {/* For Teams Trigger */}
@@ -69,7 +71,7 @@ const BrandLogo = () => {
             activeMenu === 'teams' ? 'bg-[#e3e6e8] text-[#232629] font-medium' : ''
           }`}
         >
-          For Teams
+          {t('teams')}
         </button>
       </div>
 

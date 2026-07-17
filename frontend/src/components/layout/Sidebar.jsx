@@ -3,10 +3,12 @@ import { NavLink } from 'react-router-dom';
 import { Globe, X, Camera } from 'lucide-react';
 import { useSelector, useDispatch } from 'react-redux';
 import { closeMobileSidebar } from '../../store/themeSlice';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const Sidebar = () => {
   const { mobileSidebarOpen } = useSelector((state) => state.theme);
   const dispatch = useDispatch();
+  const { t } = useLanguage();
 
   const handleLinkClick = () => {
     dispatch(closeMobileSidebar());
@@ -25,7 +27,7 @@ const Sidebar = () => {
           }`
         }
       >
-        Home
+        {t('home')}
       </NavLink>
 
       <div className="mt-4 mb-1 pl-2 text-[11px] text-gray-500 font-semibold tracking-wider uppercase">
@@ -46,7 +48,7 @@ const Sidebar = () => {
         {({ isActive }) => (
           <>
             <Globe size={16} className={isActive ? 'text-gray-900' : 'text-gray-400'} />
-            <span className="ml-1">Questions</span>
+            <span className="ml-1">{t('questions')}</span>
           </>
         )}
       </NavLink>
@@ -65,7 +67,7 @@ const Sidebar = () => {
         {({ isActive }) => (
           <>
             <Camera size={16} className={isActive ? 'text-gray-900' : 'text-gray-400'} />
-            <span className="ml-1">Social Space</span>
+            <span className="ml-1">{t('socialSpace')}</span>
           </>
         )}
       </NavLink>
@@ -81,7 +83,7 @@ const Sidebar = () => {
           }`
         }
       >
-        Tags
+        {t('tags')}
       </NavLink>
 
       <NavLink
@@ -95,7 +97,7 @@ const Sidebar = () => {
           }`
         }
       >
-        Users
+        {t('users')}
       </NavLink>
       
       <NavLink
@@ -109,7 +111,7 @@ const Sidebar = () => {
           }`
         }
       >
-        Companies
+        {t('companies')}
       </NavLink>
 
       <div className="mt-4 flex flex-col pl-2 pr-1">
