@@ -33,7 +33,7 @@ const BrandLogo = () => {
         <div className="w-8 h-8 flex items-center justify-center">
           <img src={logo} alt="ConnectSphere Logo" className="w-7 h-7 object-contain" />
         </div>
-        <span className="font-sans text-[18px] text-[#232629] tracking-tight leading-none mt-0.5 font-normal">
+        <span className="hidden sm:inline font-sans text-[18px] text-[#232629] tracking-tight leading-none mt-0.5 font-normal">
           connect<span className="font-bold">sphere</span>
         </span>
       </Link>

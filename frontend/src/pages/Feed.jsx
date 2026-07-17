@@ -210,29 +210,29 @@ const Feed = () => {
       <div className="flex-1 max-w-[750px] mr-6">
         
         {/* Header */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
           <h1 className="text-[27px] text-gray-900 font-normal">Top Questions</h1>
           <button
             type="button"
             onClick={() => navigate('/questions/ask')}
-            className="bg-[#0A95FF] hover:bg-[#0074CC] text-white px-3.5 py-2 rounded shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-[13px] transition-colors font-medium"
+            className="bg-[#0A95FF] hover:bg-[#0074CC] text-white px-3.5 py-2 rounded shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] text-[13px] transition-colors font-medium whitespace-nowrap"
           >
             Ask Question
           </button>
         </div>
 
         {/* Question count + Tabs */}
-        <div className="flex justify-between items-center mb-4 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 border-b border-gray-200">
           <span className="text-[17px] text-gray-600 font-normal pb-2">
             {totalQuestions.toLocaleString()} question{totalQuestions !== 1 ? 's' : ''}
           </span>
-          <div className="flex border border-gray-400 rounded bg-white text-[13px] mb-[-1px] overflow-hidden">
+          <div className="flex border border-gray-400 rounded bg-white text-[13px] mb-[-1px] overflow-x-auto max-w-full flex-nowrap shrink-0">
             {['Newest', 'Active', 'Bountied', 'Unanswered', 'Score'].map((tab) => (
               <button
                 type="button"
                 key={tab}
                 onClick={() => handleTabChange(tab)}
-                className={`px-3 py-2 border-r border-gray-400 last:border-r-0 hover:bg-gray-50 transition-colors ${
+                className={`px-3 py-2 border-r border-gray-400 last:border-r-0 hover:bg-gray-50 transition-colors flex-shrink-0 ${
                   activeTab === tab ? 'bg-gray-100 text-gray-900 font-medium' : 'text-gray-600'
                 }`}
               >

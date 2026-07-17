@@ -91,12 +91,12 @@ const Navbar = () => {
                         {user.username.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <span className="font-bold text-[12px] ml-1.5 text-[#3c4146] font-sans" title="Reputation">
+                    <span className="hidden sm:inline font-bold text-[12px] ml-1.5 text-[#3c4146] font-sans" title="Reputation">
                       {reputation.toLocaleString()}
                     </span>
                     
                     {/* Badge circles style */}
-                    <div className="flex items-center ml-2 space-x-1.5 text-[11px] text-[#6a737c]">
+                    <div className="hidden sm:flex items-center ml-2 space-x-1.5 text-[11px] text-[#6a737c]">
                       {goldBadges > 0 && (
                         <span className="flex items-center" title={`${goldBadges} gold badges`}>
                           <span className="w-1.5 h-1.5 bg-[#ffcc01] rounded-full mr-0.5"></span>{goldBadges}
@@ -135,7 +135,7 @@ const Navbar = () => {
               </div>
 
               {/* Trophy/Achievements Trigger */}
-              <div className="relative h-full flex items-center">
+              <div className="hidden sm:flex relative h-full items-center">
                 <button 
                   type="button"
                   onClick={() => toggleDropdown('achievements')} 
@@ -152,7 +152,7 @@ const Navbar = () => {
               </div>
 
               {/* Help Trigger */}
-              <div className="relative h-full flex items-center">
+              <div className="hidden sm:flex relative h-full items-center">
                 <button 
                   type="button"
                   onClick={() => toggleDropdown('help')} 

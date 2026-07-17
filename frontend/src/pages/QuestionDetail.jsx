@@ -153,7 +153,7 @@ const QuestionDetail = () => {
     <div className="max-w-[1000px] mx-auto text-[13px] text-gray-800">
       {/* Header */}
       <div className="pb-4 mb-4 border-b border-gray-200">
-        <div className="flex justify-between items-start mb-2 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2 gap-4">
           <h1 className="text-[24px] text-gray-900 font-normal leading-tight break-words flex-1">
             {post.caption}
           </h1>
@@ -180,9 +180,9 @@ const QuestionDetail = () => {
         </div>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         {/* Voting Column */}
-        <div className="flex flex-col items-center flex-shrink-0 w-12 pt-2">
+        <div className="flex flex-row sm:flex-col items-center justify-start sm:justify-start flex-shrink-0 gap-3.5 sm:gap-2.5 w-full sm:w-12 pt-2 border-b sm:border-b-0 pb-3.5 sm:pb-0 border-gray-200">
           <button
             onClick={() => handleVote('upvote')}
             className={`p-2 border rounded-full transition-colors ${
@@ -195,7 +195,7 @@ const QuestionDetail = () => {
             <ChevronUp size={24} />
           </button>
 
-          <span className="text-[20px] font-semibold my-2 text-gray-700">{voteBalance}</span>
+          <span className="text-[20px] font-semibold text-gray-700">{voteBalance}</span>
 
           <button
             onClick={() => handleVote('downvote')}
@@ -211,7 +211,7 @@ const QuestionDetail = () => {
 
           <button
             onClick={handleBookmark}
-            className={`mt-4 p-2 transition-colors ${isBookmarked ? 'text-orange-500' : 'text-gray-300 hover:text-orange-500'}`}
+            className={`p-2 transition-colors sm:mt-2 ${isBookmarked ? 'text-orange-500' : 'text-gray-300 hover:text-orange-500'}`}
           >
             <Bookmark size={18} fill={isBookmarked ? 'currentColor' : 'none'} />
           </button>

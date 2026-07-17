@@ -47,9 +47,9 @@ const QuestionCard = ({
   const isOwner = currentUser?.role === 'admin' || post.user?._id === currentUser?._id || post.user === currentUser?._id;
 
   return (
-    <div className="flex p-4 md:p-5 border-b border-gray-200 gap-4 md:gap-5 hover:bg-gray-50/70 transition-all duration-200 group relative">
+    <div className="flex flex-col sm:flex-row p-4 md:p-5 border-b border-gray-200 gap-4 md:gap-5 hover:bg-gray-50/70 transition-all duration-200 group relative">
       {/* Left Stats Block */}
-      <div className="flex flex-col items-end flex-shrink-0 w-[100px] md:w-[108px] gap-1.5 text-[13px] text-gray-500">
+      <div className="flex flex-row sm:flex-col items-center sm:items-end flex-wrap gap-3 sm:gap-1.5 flex-shrink-0 w-full sm:w-[108px] text-[13px] text-gray-500 border-b sm:border-b-0 pb-2 sm:pb-0 border-gray-150">
         <div className="text-gray-900 text-sm font-medium flex items-center gap-1">
           <span>{votes}</span>
           <span className="text-xs text-gray-500 font-normal">votes</span>
@@ -64,7 +64,7 @@ const QuestionCard = ({
         <div className="text-xs text-gray-400">
           {mockViews} views
         </div>
-        <div className="mt-1.5">
+        <div className="sm:mt-1.5">
           <button 
             type="button"
             onClick={() => onLike(post._id)} 
@@ -108,7 +108,7 @@ const QuestionCard = ({
             : (post.mediaUrl ? 'View attached media for more context on this question.' : 'Click to view this question detail and answers.')}
         </p>
         
-        <div className="flex flex-wrap items-center justify-between gap-3 mt-auto pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-auto pt-1">
           {/* Tags */}
           <div className="flex flex-wrap gap-1.5">
             {postTags.map(tag => (
@@ -124,7 +124,7 @@ const QuestionCard = ({
           </div>
 
           {/* Author Info */}
-          <div className="flex items-center text-[12px] text-gray-500 gap-2 flex-shrink-0 ml-auto bg-gray-50/50 px-2 py-1 rounded border border-gray-100">
+          <div className="flex items-center text-[12px] text-gray-500 gap-2 flex-shrink-0 bg-gray-50/50 px-2 py-1 rounded border border-gray-100 sm:ml-auto">
             {post.user?.avatar ? (
               <img src={post.user.avatar} alt={postOwnerName} className="w-4 h-4 rounded-sm object-cover" />
             ) : (
