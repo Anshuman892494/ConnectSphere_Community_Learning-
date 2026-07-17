@@ -69,7 +69,7 @@ const Profile = () => {
   const [passwordErrors, setPasswordErrors] = useState({});
 
   // Language Settings State
-  const { currentLanguage, requestLanguageChange, verifyLanguageChange } = useLanguage();
+  const { t, currentLanguage, requestLanguageChange, verifyLanguageChange } = useLanguage();
   const [selectedLanguage, setSelectedLanguage] = useState(currentLanguage);
   const [isSwappingLanguage, setIsSwappingLanguage] = useState(false);
   const [isVerifyModalOpen, setIsVerifyModalOpen] = useState(false);
@@ -329,10 +329,15 @@ const Profile = () => {
   const isFriend = profileUser?.friends?.some(f => f._id === loggedInUser?._id);
 
   const getMemberDays = () => {
-    if (!profileUser?.createdAt) return '4 days';
+    if (!profileUser?.createdAt) return `4 ${t('days')}`;
     const diffTime = Math.abs(new Date() - new Date(profileUser.createdAt));
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+    return `${diffDays} ${diffDays !== 1 ? t('days') : t('day')}`;
+  };
+
+  const getLastSeenText = () => {
+    if (!profileUser?.lastSeenTime) return t('thisWeek');
+    return new Date(profileUser.lastSeenTime).toLocaleString();
   };
 
   return (
@@ -359,15 +364,15 @@ const Profile = () => {
             <ul className="flex flex-wrap items-center gap-3.5 mt-2 text-xs text-gray-500 font-normal">
               <li className="flex items-center gap-1">
                 <Cake size={14} className="text-gray-400" />
-                <span>Member for <span className="text-gray-800 font-medium">{getMemberDays()}</span></span>
+                <span>{t('memberFor')} <span className="text-gray-800 font-medium">{getMemberDays()}</span></span>
               </li>
               <li className="flex items-center gap-1">
                 <Clock size={14} className="text-gray-400" />
-                <span>Last seen <span className="text-gray-800 font-medium">this week</span></span>
+                <span>{t('lastSeen')} <span className="text-gray-800 font-medium">{getLastSeenText()}</span></span>
               </li>
               <li className="flex items-center gap-1">
                 <Calendar size={14} className="text-gray-400" />
-                <span>Visited 2 days total</span>
+                <span>{t('visited')} {profileUser?.visitedDaysCount || 1} {t('daysTotal')}</span>
               </li>
             </ul>
           </div>
@@ -428,7 +433,11 @@ const Profile = () => {
                     : 'text-gray-600 hover:text-gray-900 border-b-2 border-transparent'
                 }`}
               >
-                {tab}
+                {tab === 'Profile' ? t('profile') :
+                 tab === 'Activity' ? t('activity') :
+                 tab === 'Saves' ? t('saves') :
+                 tab === 'Settings' ? t('settings') :
+                 tab === 'Login History' ? t('loginHistory') : tab}
               </button>
             );
           })}
@@ -642,7 +651,7 @@ const Profile = () => {
               <div>
                 <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Edit2 size={11} className="text-gray-400" />
-                  <span>Personal Information</span>
+                  <span>{t('personalInformation')}</span>
                 </div>
                 <ul className="space-y-0.5">
                   <li>
@@ -652,7 +661,7 @@ const Profile = () => {
                         settingsSection === 'edit-profile' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-600'
                       }`}
                     >
-                      Edit profile
+                      {t('editProfile')}
                     </button>
                   </li>
                   <li>
@@ -662,7 +671,7 @@ const Profile = () => {
                         settingsSection === 'change-password' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-600'
                       }`}
                     >
-                      Change password
+                      {t('changePassword')}
                     </button>
                   </li>
                   <li>
@@ -670,7 +679,7 @@ const Profile = () => {
                       onClick={() => addToast('Account deletion is simulated. No action required.', 'warning')}
                       className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-red-650 cursor-pointer"
                     >
-                      Delete profile
+                      {t('deleteProfile')}
                     </button>
                   </li>
                 </ul>
@@ -680,7 +689,7 @@ const Profile = () => {
               <div>
                 <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Mail size={11} className="text-gray-400" />
-                  <span>Email Settings</span>
+                  <span>{t('emailSettings')}</span>
                 </div>
                 <ul className="space-y-0.5">
                   <li>
@@ -688,7 +697,7 @@ const Profile = () => {
                       onClick={() => addToast('Email frequency options updated.', 'info')}
                       className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-600 cursor-pointer"
                     >
-                      Edit email settings
+                      {t('editEmailSettings')}
                     </button>
                   </li>
                   <li>
@@ -696,7 +705,7 @@ const Profile = () => {
                       onClick={() => addToast('Tag watch preferences loaded.', 'info')}
                       className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-600 cursor-pointer"
                     >
-                      Tag watching & ignoring
+                      {t('tagPreferences')}
                     </button>
                   </li>
                 </ul>
@@ -706,7 +715,7 @@ const Profile = () => {
               <div>
                 <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Sliders size={11} className="text-gray-400" />
-                  <span>Site settings</span>
+                  <span>{t('siteSettings')}</span>
                 </div>
                 <ul className="space-y-0.5">
                   <li>
@@ -716,7 +725,7 @@ const Profile = () => {
                         settingsSection === 'preferences' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-600'
                       }`}
                     >
-                      Preferences
+                      {t('preferences')}
                     </button>
                   </li>
                   <li>
@@ -726,7 +735,7 @@ const Profile = () => {
                         settingsSection === 'language' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-600'
                       }`}
                     >
-                      Language Settings
+                      {t('languageSettings')}
                     </button>
                   </li>
                 </ul>
@@ -736,7 +745,7 @@ const Profile = () => {
               <div>
                 <div className="px-3 text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5 flex items-center gap-1">
                   <Shield size={11} className="text-gray-400" />
-                  <span>Access</span>
+                  <span>{t('access')}</span>
                 </div>
                 <ul className="space-y-0.5">
                   <li>

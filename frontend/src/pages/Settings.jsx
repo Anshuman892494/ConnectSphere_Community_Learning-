@@ -28,7 +28,7 @@ import ProfileTab from './Settings/ProfileTab';
 const Settings = () => {
   const { user } = useSelector((state) => state.auth);
   const { addToast } = useToast();
-  const { currentLanguage, requestLanguageChange, verifyLanguageChange } = useLanguage();
+  const { t, currentLanguage, requestLanguageChange, verifyLanguageChange } = useLanguage();
 
   // Selected Section State
   const [activeSection, setActiveSection] = useState('preferences');
@@ -237,10 +237,15 @@ const Settings = () => {
   };
 
   const getMemberDays = () => {
-    if (!user?.createdAt) return '4 days';
+    if (!user?.createdAt) return `4 ${t('days')}`;
     const diffTime = Math.abs(new Date() - new Date(user.createdAt));
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return `${diffDays} day${diffDays !== 1 ? 's' : ''}`;
+    return `${diffDays} ${diffDays !== 1 ? t('days') : t('day')}`;
+  };
+
+  const getLastSeenText = () => {
+    if (!user?.loginHistory || user.loginHistory.length === 0) return new Date().toLocaleString();
+    return new Date(user.loginHistory[user.loginHistory.length - 1].loginTime).toLocaleString();
   };
 
   return (
@@ -267,15 +272,15 @@ const Settings = () => {
             <ul className="flex flex-wrap items-center gap-3.5 mt-2 text-xs text-gray-500 font-normal">
               <li className="flex items-center gap-1">
                 <Cake size={14} className="text-gray-400" />
-                <span>Member for <span className="text-gray-800 font-medium">{getMemberDays()}</span></span>
+                <span>{t('memberFor')} <span className="text-gray-800 font-medium">{getMemberDays()}</span></span>
               </li>
               <li className="flex items-center gap-1">
                 <Clock size={14} className="text-gray-400" />
-                <span>Last seen <span className="text-gray-800 font-medium">this week</span></span>
+                <span>{t('lastSeen')} <span className="text-gray-800 font-medium">{getLastSeenText()}</span></span>
               </li>
               <li className="flex items-center gap-1">
                 <Calendar size={14} className="text-gray-400" />
-                <span>Visited 2 days total</span>
+                <span>{t('visited')} {user?.loginHistory ? new Set(user.loginHistory.map(log => new Date(log.loginTime).toDateString())).size : 1} {t('daysTotal')}</span>
               </li>
             </ul>
           </div>

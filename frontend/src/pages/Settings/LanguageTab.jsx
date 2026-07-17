@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../../contexts/LanguageContext';
 
 const LanguageTab = ({
   selectedLanguage,
@@ -6,17 +7,19 @@ const LanguageTab = ({
   isSwappingLanguage,
   handleRequestLanguage
 }) => {
+  const { t } = useLanguage();
+
   return (
     <div>
       <div className="border-b border-gray-200 pb-3 mb-6">
-        <h2 className="text-[20px] font-normal text-gray-900 font-sans">Language Settings</h2>
+        <h2 className="text-[20px] font-normal text-gray-900 font-sans">{t('languageSettings')}</h2>
       </div>
       
       <div className="max-w-[400px] border border-gray-200 rounded p-5 md:p-6 bg-white shadow-sm">
         <form onSubmit={handleRequestLanguage} className="space-y-4">
           <div className="flex flex-col gap-1.5">
             <label className="font-bold text-xs text-gray-700">
-              Interface language
+              {t('preferredLanguage')}
             </label>
             <select
               value={selectedLanguage}
@@ -46,7 +49,7 @@ const LanguageTab = ({
               disabled={isSwappingLanguage}
               className="bg-[#0A95FF] hover:bg-[#0074CC] text-white font-bold text-xs py-2.5 px-4 rounded-[3px] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50 transition-colors cursor-pointer"
             >
-              {isSwappingLanguage ? 'Requesting...' : 'Save changes'}
+              {isSwappingLanguage ? 'Requesting...' : t('saveChanges')}
             </button>
           </div>
         </form>
