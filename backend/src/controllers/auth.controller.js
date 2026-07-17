@@ -154,12 +154,14 @@ exports.register = async (req, res, next) => {
       isPhoneVerified: false,
     });
 
-    // Send email verification OTP
-    await sendOTPEmail(email, emailOtp, username);
+    // Send email verification OTP in the background to avoid blocking
+    sendOTPEmail(email, emailOtp, username)
+      .catch(err => console.error('[Nodemailer Error] Registration email failed:', err));
 
-    // Send SMS verification OTP if phone is provided
+    // Send SMS verification OTP if phone is provided in the background
     if (phone) {
-      await sendSMS(phone, `Your ConnectSphere phone verification code is: ${phoneOtp}`);
+      sendSMS(phone, `Your ConnectSphere phone verification code is: ${phoneOtp}`)
+        .catch(err => console.error('[Twilio Error] Registration SMS failed:', err));
     } else {
       // Print OTPs to server console for testing if phone is not provided
       console.log('\n=========================================');
@@ -245,7 +247,9 @@ exports.login = async (req, res, next) => {
       user.loginOtpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
       await user.save();
 
-      await sendLoginOTPEmail(user.email, loginOtp, user.username);
+      // Send login OTP email in the background to avoid blocking
+      sendLoginOTPEmail(user.email, loginOtp, user.username)
+        .catch(err => console.error('[Nodemailer Error] Login OTP email failed:', err));
 
       return res.json({
         requireOtp: true,
@@ -489,8 +493,9 @@ exports.resendEmailCode = async (req, res, next) => {
     user.emailVerificationExpires = new Date(Date.now() + 15 * 60 * 1000);
     await user.save();
 
-    // Send email verification OTP
-    await sendOTPEmail(user.email, code, user.username);
+    // Send email verification OTP in the background
+    sendOTPEmail(user.email, code, user.username)
+      .catch(err => console.error('[Nodemailer Error] Resend verification email failed:', err));
 
     console.log(`[DEV ONLY] Resent Email OTP: ${code}`);
 
@@ -518,7 +523,8 @@ exports.resendPhoneCode = async (req, res, next) => {
     await user.save();
 
     if (user.phone) {
-      await sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${code}`);
+      sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${code}`)
+        .catch(err => console.error('[Twilio Error] Resend SMS failed:', err));
     } else {
       console.log(`[DEV ONLY] Resent SMS OTP: ${code}`);
     }
@@ -589,14 +595,16 @@ exports.updateVerificationContacts = async (req, res, next) => {
 
     await user.save();
 
-    // Send email verification OTP if updated
+    // Send email verification OTP if updated in the background
     if (emailChanged) {
-      await sendOTPEmail(user.email, user.emailVerificationCode, user.username);
+      sendOTPEmail(user.email, user.emailVerificationCode, user.username)
+        .catch(err => console.error('[Nodemailer Error] Update verification email failed:', err));
     }
 
-    // Send SMS verification OTP if phone was updated
+    // Send SMS verification OTP if phone was updated in the background
     if (devOtp.phoneOtp) {
-      await sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${devOtp.phoneOtp}`);
+      sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${devOtp.phoneOtp}`)
+        .catch(err => console.error('[Twilio Error] Update SMS failed:', err));
     }
 
     if (devOtp.emailOtp || devOtp.phoneOtp) {
@@ -700,9 +708,10 @@ exports.forgotPassword = async (req, res, next) => {
     user.lastForgotPasswordRequest = new Date();
     await user.save();
 
-    // Trigger email send if user has email
+    // Trigger email send in the background if user has email
     if (user.email) {
-      await sendPasswordResetEmail(user.email, tempPassword, user.username);
+      sendPasswordResetEmail(user.email, tempPassword, user.username)
+        .catch(err => console.error('[Nodemailer Error] Password reset email failed:', err));
     }
 
     // Log the generated password to server console for testing/verification
@@ -781,15 +790,17 @@ exports.requestLanguageChange = async (req, res, next) => {
     await user.save();
 
     if (language === 'fr') {
-      // Send OTP to email
-      await sendOTPEmail(user.email, otpCode, user.username);
+      // Send OTP to email in the background
+      sendOTPEmail(user.email, otpCode, user.username)
+        .catch(err => console.error('[Nodemailer Error] Language change email failed:', err));
       console.log(`\n[EMAIL GATEWAY] Sent Language Swap OTP to ${user.email} for switching to ${language}: ${otpCode}\n`);
     } else {
       // Authenticate via mobile number (send OTP to registered mobile number)
       if (!user.phone) {
         return res.status(400).json({ message: 'Please register a mobile number first to change your language settings' });
       }
-      await sendSMS(user.phone, `Your ConnectSphere verification code for switching language to ${language.toUpperCase()} is: ${otpCode}`);
+      sendSMS(user.phone, `Your ConnectSphere verification code for switching language to ${language.toUpperCase()} is: ${otpCode}`)
+        .catch(err => console.error('[Twilio Error] Language change SMS failed:', err));
     }
 
     res.json({
