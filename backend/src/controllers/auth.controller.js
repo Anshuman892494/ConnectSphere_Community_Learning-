@@ -105,7 +105,19 @@ const getRefreshToken = (req) => {
 // @route   POST /api/auth/register
 exports.register = async (req, res, next) => {
   try {
-    const { username, email, phone, password } = req.body;
+    let { username, email, phone, password } = req.body;
+    if (username) username = username.trim();
+    if (email) email = email.trim().toLowerCase();
+    if (phone) {
+      phone = phone.trim().replace(/\s+/g, '');
+      if (!phone.startsWith('+')) {
+        if (phone.length === 10) {
+          phone = '+91' + phone;
+        } else if (phone.startsWith('91') && phone.length === 12) {
+          phone = '+' + phone;
+        }
+      }
+    }
 
     // Check if username, email, or phone already exists
     const orConditions = [{ email }, { username }];
@@ -197,7 +209,8 @@ exports.register = async (req, res, next) => {
 // @route   POST /api/auth/login
 exports.login = async (req, res, next) => {
   try {
-    const { email, password, rememberMe } = req.body;
+    let { email, password, rememberMe } = req.body;
+    if (email) email = email.trim().toLowerCase();
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
@@ -523,7 +536,18 @@ exports.resendPhoneCode = async (req, res, next) => {
 // @route   POST /api/auth/update-contacts
 exports.updateVerificationContacts = async (req, res, next) => {
   try {
-    const { email, phone } = req.body;
+    let { email, phone } = req.body;
+    if (email) email = email.trim().toLowerCase();
+    if (phone) {
+      phone = phone.trim().replace(/\s+/g, '');
+      if (!phone.startsWith('+')) {
+        if (phone.length === 10) {
+          phone = '+91' + phone;
+        } else if (phone.startsWith('91') && phone.length === 12) {
+          phone = '+' + phone;
+        }
+      }
+    }
     const user = await User.findById(req.user.id);
 
     if (!user) {
@@ -546,7 +570,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
     const expiry = new Date(Date.now() + 15 * 60 * 1000);
     let emailChanged = false;
 
-    if (email && email !== user.email) {
+    if (email && (email !== user.email || !user.isEmailVerified)) {
       user.email = email;
       user.isEmailVerified = false;
       user.emailVerificationCode = generateOTP();
@@ -555,7 +579,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
       emailChanged = true;
     }
 
-    if (phone && phone !== user.phone) {
+    if (phone && (phone !== user.phone || !user.isPhoneVerified)) {
       user.phone = phone;
       user.isPhoneVerified = false;
       user.phoneVerificationCode = generateOTP();
@@ -621,10 +645,24 @@ exports.getMe = async (req, res, next) => {
 // @access  Public
 exports.forgotPassword = async (req, res, next) => {
   try {
-    const { emailOrPhone } = req.body;
+    let { emailOrPhone } = req.body;
 
     if (!emailOrPhone) {
       return res.status(400).json({ message: 'Please provide registered email address or phone number' });
+    }
+
+    emailOrPhone = emailOrPhone.trim();
+    if (emailOrPhone.includes('@')) {
+      emailOrPhone = emailOrPhone.toLowerCase();
+    } else {
+      emailOrPhone = emailOrPhone.replace(/\s+/g, '');
+      if (!emailOrPhone.startsWith('+')) {
+        if (emailOrPhone.length === 10) {
+          emailOrPhone = '+91' + emailOrPhone;
+        } else if (emailOrPhone.startsWith('91') && emailOrPhone.length === 12) {
+          emailOrPhone = '+' + emailOrPhone;
+        }
+      }
     }
 
     // Search for user by email or phone

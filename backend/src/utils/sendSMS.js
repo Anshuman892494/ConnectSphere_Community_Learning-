@@ -12,6 +12,18 @@ const { sendOTPEmail } = require("./sendEmail");
 const sendSMS = async (phone, message) => {
   const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER } = process.env;
 
+  // Normalize phone number to international format
+  if (phone) {
+    phone = phone.trim().replace(/\s+/g, '');
+    if (!phone.startsWith('+')) {
+      if (phone.length === 10) {
+        phone = '+91' + phone;
+      } else if (phone.startsWith('91') && phone.length === 12) {
+        phone = '+' + phone;
+      }
+    }
+  }
+
   // Fallback to Console Print in Dev Mode if credentials are not configured
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
     console.log('\n=========================================');
