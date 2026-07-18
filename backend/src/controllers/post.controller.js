@@ -201,8 +201,8 @@ exports.addComment = async (req, res, next) => {
     post.comments.push(newComment);
     await post.save();
 
-    // Give +2 reputation for answering
-    await User.findByIdAndUpdate(req.user.id, { $inc: { reputation: 2 } });
+    // Give +5 reputation for answering
+    await User.findByIdAndUpdate(req.user.id, { $inc: { reputation: 5 } });
 
     const updatedPost = await Post.findById(post._id)
       .populate('user', 'username avatar reputation')
@@ -393,6 +393,16 @@ exports.voteComment = async (req, res, next) => {
       }
     }
 
+    // Check for 5-upvote bonus dynamically
+    const upvotesCount = comment.upvotes ? comment.upvotes.length : 0;
+    if (upvotesCount >= 5 && !comment.bonusAwarded) {
+      comment.bonusAwarded = true;
+      await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: 5 } });
+    } else if (upvotesCount < 5 && comment.bonusAwarded) {
+      comment.bonusAwarded = false;
+      await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: -5 } });
+    }
+
     await post.save();
 
     const updatedPost = await Post.findById(post._id)
@@ -519,10 +529,29 @@ exports.deleteComment = async (req, res, next) => {
       return res.status(403).json({ message: 'Not authorized to delete this comment' });
     }
 
-    // If this was the accepted answer, clear it
+    // If this was the accepted answer, clear it and deduct points
+    const commentOwnerId = comment.user.toString();
+    let repToDeduct = 5; // Base points for answering
+
+    if (comment.upvotes) {
+      repToDeduct += comment.upvotes.length * 10;
+    }
+    if (comment.downvotes) {
+      repToDeduct -= comment.downvotes.length * 2;
+    }
+    if (comment.bonusAwarded) {
+      repToDeduct += 5;
+    }
+
     if (post.acceptedAnswer && post.acceptedAnswer.toString() === req.params.comment_id) {
       post.acceptedAnswer = null;
+      repToDeduct += 15; // Deduct accepted answer points from answer owner
+      // Deduct +2 from question owner (post owner) for accepting
+      await User.findByIdAndUpdate(post.user.toString(), { $inc: { reputation: -2 } });
     }
+
+    // Deduct total reputation from answer owner
+    await User.findByIdAndUpdate(commentOwnerId, { $inc: { reputation: -repToDeduct } });
 
     comment.deleteOne();
     await post.save();
