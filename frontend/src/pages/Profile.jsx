@@ -79,6 +79,32 @@ const Profile = () => {
   const [countdown, setCountdown] = useState(60);
   const [swapTarget, setSwapTarget] = useState('');
 
+  // Point Transfer State
+  const [transferPointsVal, setTransferPointsVal] = useState('');
+  const [isTransferring, setIsTransferring] = useState(false);
+
+  const handleTransferPoints = async (e) => {
+    e.preventDefault();
+    const pts = parseInt(transferPointsVal, 10);
+    if (!pts || pts <= 0) {
+      addToast('Please enter a valid positive number of points', 'warning');
+      return;
+    }
+
+    setIsTransferring(true);
+    try {
+      const res = await API.post(`/users/${profileUser._id}/transfer-points`, { points: pts });
+      addToast(res.data.message, 'success');
+      dispatch(updateUser({ reputation: res.data.senderReputation }));
+      setProfileUser((prev) => ({ ...prev, reputation: res.data.receiverReputation }));
+      setTransferPointsVal('');
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Failed to transfer points', 'error');
+    } finally {
+      setIsTransferring(false);
+    }
+  };
+
   // Profile Edit fields (in Settings)
   const [displayName, setDisplayName] = useState(loggedInUser?.username || '');
   const [bioText, setBioText] = useState(loggedInUser?.bio || '');
@@ -505,6 +531,49 @@ const Profile = () => {
                 ))
               )}
             </div>
+
+            {!isOwnProfile && (
+              <>
+                <h2 className="text-[21px] text-gray-900 mb-2 font-medium">💰 Transfer Points</h2>
+                <div className="border border-gray-300 rounded p-4 bg-white flex flex-col gap-3 mb-6 shadow-sm">
+                  <div className="text-gray-600 text-xs flex justify-between items-center">
+                    <span>Your Balance:</span>
+                    <strong className="text-gray-900 font-bold text-sm bg-gray-50 border border-gray-200 px-2 py-0.5 rounded">
+                      {(loggedInUser?.reputation || 0).toLocaleString()} pts
+                    </strong>
+                  </div>
+
+                  {(loggedInUser?.reputation || 0) <= 10 ? (
+                    <div className="p-2.5 bg-amber-50 border border-amber-250 text-amber-800 text-[11px] rounded leading-relaxed">
+                      ⚠️ You must have more than 10 points to transfer points to other users.
+                    </div>
+                  ) : (
+                    <form onSubmit={handleTransferPoints} className="space-y-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[11px] text-gray-500 font-bold uppercase">Points to send</label>
+                        <input
+                          type="number"
+                          placeholder="Enter amount..."
+                          min="1"
+                          max={loggedInUser.reputation}
+                          value={transferPointsVal}
+                          onChange={(e) => setTransferPointsVal(e.target.value.replace(/\D/g, ''))}
+                          required
+                          className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-xs focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isTransferring || !transferPointsVal}
+                        className="w-full bg-[#0A95FF] hover:bg-[#0074CC] text-white py-1.5 rounded text-xs font-bold transition-colors disabled:opacity-50 flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        {isTransferring ? 'Transferring...' : 'Transfer Points'}
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </>
+            )}
             
             <h2 className="text-[21px] text-gray-900 mb-2 font-medium">Top tags</h2>
             <div className="border border-gray-300 rounded p-3 bg-white shadow-sm flex flex-col gap-2">

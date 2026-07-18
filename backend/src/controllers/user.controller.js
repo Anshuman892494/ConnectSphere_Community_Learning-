@@ -148,3 +148,61 @@ exports.toggleFriend = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Transfer points to another user
+// @route   POST /api/users/:id/transfer-points
+// @access  Private
+exports.transferPoints = async (req, res, next) => {
+  try {
+    const { points } = req.body;
+    const senderId = req.user.id;
+    const receiverId = req.params.id;
+
+    // Validate points
+    const transferAmount = parseInt(points, 10);
+    if (isNaN(transferAmount) || transferAmount <= 0) {
+      return res.status(400).json({ message: 'Please enter a valid positive number of points to transfer' });
+    }
+
+    // Cannot transfer to yourself
+    if (senderId === receiverId) {
+      return res.status(400).json({ message: 'You cannot transfer points to yourself' });
+    }
+
+    const sender = await User.findById(senderId);
+    const receiver = await User.findById(receiverId);
+
+    if (!sender || !receiver) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check: sender must have MORE than 10 points
+    if (sender.reputation <= 10) {
+      return res.status(403).json({
+        message: 'You need more than 10 points to transfer. Your current points: ' + sender.reputation
+      });
+    }
+
+    // Cannot transfer more than sender has
+    if (transferAmount > sender.reputation) {
+      return res.status(400).json({
+        message: 'Insufficient points. Your current balance: ' + sender.reputation
+      });
+    }
+
+    // Perform transfer
+    sender.reputation -= transferAmount;
+    receiver.reputation += transferAmount;
+
+    await sender.save();
+    await receiver.save();
+
+    res.json({
+      message: `Successfully transferred ${transferAmount} points to ${receiver.username}`,
+      senderReputation: sender.reputation,
+      receiverReputation: receiver.reputation,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
