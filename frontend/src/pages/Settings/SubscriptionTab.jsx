@@ -50,6 +50,21 @@ const SubscriptionTab = () => {
 
   useEffect(() => {
     fetchUsage();
+
+    // Dynamically load Razorpay SDK only when SubscriptionTab is mounted
+    let script;
+    if (!window.Razorpay) {
+      script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
+    }
+
+    return () => {
+      if (script && document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
 
   const fetchUsage = async () => {
