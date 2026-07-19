@@ -30,6 +30,7 @@
 ### 6. Render Keep-Alive & Dynamic CORS Configuration
 - **Keep-Alive Self-Ping:** Added a public `/ping` route that returns `"Server is Active"`. Set up a background `setInterval` in `index.js` that pings itself every 10 minutes to prevent the container from sleeping on the Render Free Tier.
 - **Dynamic CORS Evaluator:** Replaced static CORS config with a dynamic origin evaluation logic in `index.js` that automatically allows requests from local dev (`localhost:5173`/`3000`), the configured `FRONTEND_URL`, and any Render frontend subdomain ending with `.onrender.com`.
+- **Express Proxy Trust Setting:** Configured `app.set('trust proxy', 1)` in `index.js` to prevent the `express-rate-limit` Validation Error (`ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`) when running behind Render's reverse proxy load balancer.
 
 ### 7. Razorpay Optimization & Logo Favicon Setup
 - **Dynamic Script Injection:** Removed global Razorpay `checkout.js` loading from `index.html` (which was causing continuous background preload warnings in the console). Programmed the script to inject dynamically *only* when the `SubscriptionTab` mounts and remove itself on unmount.
