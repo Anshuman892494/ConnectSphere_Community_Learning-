@@ -50,6 +50,11 @@ app.get('/', (req, res) => {
   res.json({ message: 'ConnectSphere API Server is running successfully!' });
 });
 
+// Ping endpoint for keep-alive monitoring
+app.get('/ping', (req, res) => {
+  res.json({ status: 'ok', message: 'pong' });
+});
+
 // Global Error Handler
 app.use(errorHandler);
 
@@ -58,6 +63,26 @@ const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
   if (process.env.NODE_ENV !== 'production') {
     console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  }
+
+  // Keep-alive self-ping interval for Render free tier spin-down prevention
+  const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.BACKEND_URL;
+  if (selfUrl) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`Render Self-Ping Keep-Alive initiated for: ${selfUrl}`);
+    }
+    // Ping every 10 minutes (600,000 ms) to keep container hot
+    setInterval(() => {
+      fetch(`${selfUrl}/ping`)
+        .then((res) => {
+          if (process.env.NODE_ENV !== 'production') {
+            console.log(`Self-ping keep-alive successful: status ${res.status}`);
+          }
+        })
+        .catch((err) => {
+          console.error(`Self-ping keep-alive failed: ${err.message}`);
+        });
+    }, 10 * 60 * 1000);
   }
 });
 
