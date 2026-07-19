@@ -11,6 +11,9 @@ connectDB();
 
 const app = express();
 
+// Trust proxy settings for Render / reverse proxies (express-rate-limit requirement)
+app.set('trust proxy', 1);
+
 // Standard Middlewares
 const allowedOrigins = [
   'http://localhost:5173',
