@@ -163,7 +163,7 @@ exports.register = async (req, res, next) => {
 
     // Send email verification OTP in the background to avoid blocking
     sendOTPEmail(email, emailOtp, username)
-      .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Registration email failed:', err));
+      .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Resend Error] Registration email failed:', err));
 
     // Send SMS verification OTP if phone is provided in the background
     if (phone) {
@@ -272,7 +272,7 @@ exports.login = async (req, res, next) => {
 
       // Send login OTP email in the background to avoid blocking
       sendLoginOTPEmail(user.email, loginOtp, user.username)
-        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Login OTP email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Resend Error] Login OTP email failed:', err));
 
       const responseData = {
         requireOtp: true,
@@ -521,7 +521,7 @@ exports.resendEmailCode = async (req, res, next) => {
 
     // Send email verification OTP in the background
     sendOTPEmail(user.email, code, user.username)
-      .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Resend verification email failed:', err));
+      .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Resend Error] Resend verification email failed:', err));
 
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[DEV ONLY] Resent Email OTP: ${code}`);
@@ -633,7 +633,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
     // Send email verification OTP if updated in the background
     if (emailChanged) {
       sendOTPEmail(user.email, user.emailVerificationCode, user.username)
-        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Update verification email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Resend Error] Update verification email failed:', err));
     }
 
     // Send SMS verification OTP if phone was updated in the background
@@ -751,7 +751,7 @@ exports.forgotPassword = async (req, res, next) => {
     // Trigger email send in the background if user has email
     if (user.email) {
       sendPasswordResetEmail(user.email, tempPassword, user.username)
-        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Password reset email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Resend Error] Password reset email failed:', err));
     }
 
     // Log the generated password to server console for testing/verification
@@ -837,7 +837,7 @@ exports.requestLanguageChange = async (req, res, next) => {
     if (language === 'fr') {
       // Send OTP to email in the background
       sendOTPEmail(user.email, otpCode, user.username)
-        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Language change email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Resend Error] Language change email failed:', err));
       if (process.env.NODE_ENV !== 'production') {
         console.log(`\n[EMAIL GATEWAY] Sent Language Swap OTP to ${user.email} for switching to ${language}: ${otpCode}\n`);
       }
@@ -991,7 +991,7 @@ exports.googleLogin = async (req, res, next) => {
 
       // Send login OTP email in the background to avoid blocking
       sendLoginOTPEmail(user.email, loginOtp, user.username)
-        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Google Login OTP email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Resend Error] Google Login OTP email failed:', err));
 
       const responseData = {
         requireOtp: true,

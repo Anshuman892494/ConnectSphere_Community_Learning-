@@ -186,7 +186,7 @@ exports.verifySubscription = async (req, res, next) => {
     sendSubscriptionInvoiceEmail(user.email, user.username, planName, amount, invoiceId)
       .catch(err => {
         if (process.env.NODE_ENV !== 'production') {
-          console.error('[Nodemailer Error] Subscription invoice email failed:', err);
+          console.error('[Resend Error] Subscription invoice email failed:', err);
         }
       });
 
