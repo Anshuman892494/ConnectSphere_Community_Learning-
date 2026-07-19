@@ -19,9 +19,10 @@
 - **Public API Exposure:** Removed the `protect` middleware constraint from the `/api/posts/global-stats` route in `post.routes.js`, making the endpoint public.
 - **Visitor Statistics Rendering:** Enabled the "About" popover in the top navigation bar to successfully query actual live database counts (Registered Users, Posted Questions, Tag Collectives) even for logged-out/guest visitors, replacing hardcoded mock statistics.
 
-### 4. Nodemailer SMTP Migration to Brevo
-- **Brevo SMTP Credentials:** Configured `SMTP_HOST=smtp-relay.brevo.com` and `SMTP_PORT=587` in `backend/.env`.
-- **Sender Validation Alignment:** Configured the `EMAIL_FROM` variable to match the Brevo-registered email to avoid SMTP sending authentication errors.
+### 4. Nodemailer SMTP Migration to Gmail (and Latency Adjustments)
+- **Gmail SMTP Configuration:** Restored Gmail SMTP with the verified App Password inside `backend/.env` to provide instant email delivery to `anshuman892494@gmail.com` without DMARC blocks or spam queue deferrals.
+- **Transporter Timeouts:** Increased connection/socket timeouts in `sendEmail.js` from `1500ms` (which was causing connection timeout errors under cloud network fluctuation) to a robust `10000ms`.
+- **Persistent Error Logging:** Enabled dynamic error logs globally in `sendEmail.js` so that SMTP exceptions are always printed directly to the Render Console Logs.
 
 ### 5. Git Version Control & Code Push
 - **5-Part Commit Staging:** Organized and committed all modifications into 5 distinct logical chunks (Backend Connection Optimizations, Controllers/Models, Frontend API/Settings, Avatar Uploads, and Layout polishing).
@@ -44,6 +45,7 @@
 - [index.js](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/backend/src/index.js) (Modified)
 - [db.js](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/backend/src/config/db.js) (Modified)
 - [post.routes.js](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/backend/src/routes/post.routes.js) (Modified)
+- [sendEmail.js](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/backend/src/utils/sendEmail.js) (Modified)
 - [.env](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/backend/.env) (Modified)
 
 ### Frontend
