@@ -54,4 +54,25 @@ const admin = (req, res, next) => {
   }
 };
 
-module.exports = { protect, admin };
+// Optional protect middleware - decode token if present, but do not block request if invalid/absent
+const optionalProtect = async (req, res, next) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      if (token && process.env.JWT_SECRET) {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select('+role');
+        if (user && !user.isBlocked) {
+          req.user = user;
+        }
+      }
+    } catch (error) {
+      if (process.env.NODE_ENV !== 'production') {
+        console.warn('Optional auth token verification failed:', error.message);
+      }
+    }
+  }
+  next();
+};
+
+module.exports = { protect, admin, optionalProtect };

@@ -18,17 +18,17 @@ const {
   getPopularQuestions,
   getGlobalStats
 } = require('../controllers/post.controller');
-const { protect } = require('../middleware/auth');
+const { protect, optionalProtect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
 
 // Search (must be before /:id to avoid conflicts)
-router.get('/search', protect, searchPosts);
+router.get('/search', optionalProtect, searchPosts);
 
 // Tags aggregation
-router.get('/tags', protect, getTags);
+router.get('/tags', optionalProtect, getTags);
 
 // Popular/trending questions for sidebar
-router.get('/popular', protect, getPopularQuestions);
+router.get('/popular', optionalProtect, getPopularQuestions);
 
 // Global stats (Public, no protect middleware)
 router.get('/global-stats', getGlobalStats);
@@ -36,10 +36,10 @@ router.get('/global-stats', getGlobalStats);
 // Main CRUD
 router.route('/')
   .post(protect, createPost)
-  .get(protect, getPosts);
+  .get(optionalProtect, getPosts);
 
 router.route('/:id')
-  .get(protect, getPost)
+  .get(optionalProtect, getPost)
   .delete(protect, deletePost);
 
 // Voting & interactions

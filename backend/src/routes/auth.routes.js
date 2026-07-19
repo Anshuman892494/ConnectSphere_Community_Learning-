@@ -28,6 +28,16 @@ router.post('/login/verify-otp', verifyLoginOtp);
 router.post('/logout', logout);
 router.post('/refresh', refreshToken);
 router.post('/forgot-password', forgotPassword);
+router.post('/contact', (req, res) => {
+  const { name, email, subject, message } = req.body;
+  if (!name || !email || !subject || !message) {
+    return res.status(400).json({ message: 'Please fill in all fields.' });
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`[Contact Submission] ${name} (${email}) - Subject: ${subject}\nMessage: ${message}`);
+  }
+  res.json({ message: 'Thank you! Your inquiry has been received. Our support team will get back to you shortly.' });
+});
 
 // Protected routes (requires valid access token)
 router.get('/me', protect, getMe);
