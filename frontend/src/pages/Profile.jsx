@@ -315,7 +315,11 @@ const Profile = () => {
     try {
       setIsLoading(true);
       const response = await API.get(`/users/${username}`);
-      setProfileUser(response.data.user);
+      const userData = response.data.user;
+      if (userData && userData.friends) {
+        userData.friends = userData.friends.filter(f => f && f._id && f.username);
+      }
+      setProfileUser(userData);
       setPosts(response.data.posts);
       setEditForm({
         avatar: response.data.user.avatar || '',
@@ -419,7 +423,7 @@ const Profile = () => {
   const silverBadges = Math.floor((reputation % 500) / 100);
   const bronzeBadges = Math.floor((reputation % 100) / 25);
 
-  const isFriend = profileUser?.friends?.some(f => f._id === loggedInUser?._id);
+  const isFriend = profileUser?.friends?.some(f => f && f._id === loggedInUser?._id);
 
   const getMemberDays = () => {
     if (!profileUser?.createdAt) return `4 ${t('days')}`;

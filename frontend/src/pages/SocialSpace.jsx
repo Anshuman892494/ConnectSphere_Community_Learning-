@@ -31,23 +31,25 @@ const SocialSpace = () => {
 
   // Load social posts, user friends and user recommendations
   const fetchData = useCallback(async () => {
+    if (!currentUser?.username) return;
     try {
       setIsLoading(true);
       // Fetch user profile to get friend count and list
       const profileRes = await API.get(`/users/${currentUser.username}`);
-      const populatedFriends = profileRes.data.user.friends || [];
+      const populatedFriends = (profileRes.data?.user?.friends || []).filter(f => f && f._id && f.username);
       setFriendsList(populatedFriends);
       setFriendCount(populatedFriends.length);
 
       // Fetch all users to recommend friends
       const usersRes = await API.get('/users');
-      const allUsers = usersRes.data || [];
+      const allUsers = (usersRes.data || []).filter(u => u && u._id && u.username);
       
       // Filter out self and current friends
       const filteredRecommendations = allUsers.filter(
         (u) => 
+          currentUser?._id &&
           u._id !== currentUser._id && 
-          !populatedFriends.some(f => f._id === u._id)
+          !populatedFriends.some(f => f && f._id === u._id)
       );
       setNonFriends(filteredRecommendations.slice(0, 5));
 
@@ -64,6 +66,15 @@ const SocialSpace = () => {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  if (!currentUser) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
+        <div className="w-8 h-8 border-4 border-[#0A95FF] border-t-transparent rounded-full animate-spin"></div>
+        <span className="text-gray-500 text-xs font-semibold">Loading User Profile...</span>
+      </div>
+    );
+  }
 
   // Handle media upload
   const handleMediaChange = (e) => {
