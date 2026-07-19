@@ -10,7 +10,7 @@ import ErrorBoundary from './components/common/ErrorBoundary';
 
 function App() {
   // Using a fallback so the app doesn't crash if env is missing
-  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID';
+  const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   React.useEffect(() => {
     const applyTheme = (themeMode) => {

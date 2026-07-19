@@ -34,13 +34,14 @@ API.interceptors.response.use(
     if (error.response && error.response.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      // Do not try to refresh if request is already to login, register, logout, or refresh
+      // Do not try to refresh if request is already to login, register, logout, google, or refresh endpoints
       const url = originalRequest.url || '';
       const isAuthEndpoint =
         url.includes('/auth/login') ||
         url.includes('/auth/register') ||
         url.includes('/auth/logout') ||
-        url.includes('/auth/refresh');
+        url.includes('/auth/refresh') ||
+        url.includes('/auth/google');
 
       if (isAuthEndpoint) {
         return Promise.reject(error);
@@ -69,7 +70,7 @@ API.interceptors.response.use(
         if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
           window.location.href = '/login?expired=true';
         }
-        return Promise.reject(refreshError);
+        return Promise.reject(error); // Reject with original request error instead of refresh error
       }
     }
 
