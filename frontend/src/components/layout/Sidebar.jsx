@@ -124,7 +124,11 @@ const Sidebar = () => {
       
       <NavLink
         to="/companies"
-        onClick={handleLinkClick}
+        onClick={(e) => {
+          e.preventDefault();
+          addToast('Companies directory is coming soon!', 'info');
+          handleLinkClick();
+        }}
         className={({ isActive }) =>
           `py-2 pl-8 pr-1 transition-colors ${
             isActive

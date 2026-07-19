@@ -25,6 +25,7 @@ const Tags = lazy(() => import('../pages/Tags'));
 const AskQuestion = lazy(() => import('../pages/AskQuestion'));
 const SocialSpace = lazy(() => import('../pages/SocialSpace'));
 const Contact = lazy(() => import('../pages/Contact'));
+const NotFound = lazy(() => import('../pages/NotFound'));
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
@@ -79,6 +80,7 @@ const AppRoutes = () => {
           <Route path="/tags" element={<Tags />} />
           <Route path="/profile/:username" element={<Profile />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
 
         {/* Protected Routes Group */}
@@ -89,9 +91,6 @@ const AppRoutes = () => {
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>
-
-        {/* Fallback route */}
-        <Route path="*" element={<Login />} />
       </Routes>
     </Suspense>
   );
