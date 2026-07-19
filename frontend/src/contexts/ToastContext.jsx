@@ -38,7 +38,7 @@ export const ToastProvider = ({ children }) => {
       {children}
       
       {/* Toast Overlay Container */}
-      <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 w-full max-w-sm">
+      <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 w-full max-w-sm">
         {toasts.map((t) => (
           <div
             key={t.id}
