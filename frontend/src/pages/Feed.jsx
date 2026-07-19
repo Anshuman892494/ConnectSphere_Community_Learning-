@@ -23,6 +23,7 @@ const Feed = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalQuestions, setTotalQuestions] = useState(0);
+  const [limit, setLimit] = useState(15);
 
   const tabToSort = {
     'Newest': 'newest',
@@ -37,7 +38,7 @@ const Feed = () => {
       setIsLoading(true);
       const params = {
         page: currentPage,
-        limit: 15,
+        limit: limit,
         sort: tabToSort[activeTab] || 'newest',
       };
       
@@ -69,7 +70,7 @@ const Feed = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, activeTab, selectedTag, searchQuery]);
+  }, [currentPage, activeTab, selectedTag, searchQuery, limit]);
 
   useEffect(() => {
     fetchPosts();
@@ -125,7 +126,7 @@ const Feed = () => {
   };
 
   const renderPagination = () => {
-    if (totalPages <= 1) return null;
+    if (totalQuestions === 0) return null;
 
     const pages = [];
     const maxVisible = 5;
@@ -141,67 +142,94 @@ const Feed = () => {
     }
 
     return (
-      <div className="flex items-center gap-1 mt-6 mb-4">
-        {currentPage > 1 && (
-          <button
-            type="button"
-            onClick={() => setCurrentPage(currentPage - 1)}
-            className="px-3 py-1 text-[13px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors"
-          >
-            Prev
-          </button>
-        )}
-
-        {startPage > 1 && (
-          <>
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-8 mb-6 border-t border-gray-100 pt-6">
+        
+        {/* Left Side: Pagination Numbers */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {totalPages > 1 && currentPage > 1 && (
             <button
               type="button"
-              onClick={() => setCurrentPage(1)}
-              className="px-3 py-1 text-[13px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="px-2.5 py-1 text-[12px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors font-medium cursor-pointer"
             >
-              1
+              Prev
             </button>
-            {startPage > 2 && <span className="px-1 text-gray-400">…</span>}
-          </>
-        )}
+          )}
 
-        {pages.map((p) => (
-          <button
-            type="button"
-            key={p}
-            onClick={() => setCurrentPage(p)}
-            className={`px-3 py-1 text-[13px] border rounded-[3px] transition-colors ${
-              p === currentPage
-                ? 'bg-[#F48024] text-white border-[#F48024] font-medium'
-                : 'border-gray-300 hover:bg-gray-100 text-gray-700'
-            }`}
-          >
-            {p}
-          </button>
-        ))}
+          {totalPages > 1 && startPage > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={() => setCurrentPage(1)}
+                className="px-2.5 py-1 text-[12px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors font-medium cursor-pointer"
+              >
+                1
+              </button>
+              {startPage > 2 && <span className="px-0.5 text-gray-400">…</span>}
+            </>
+          )}
 
-        {endPage < totalPages && (
-          <>
-            {endPage < totalPages - 1 && <span className="px-1 text-gray-400">…</span>}
+          {totalPages > 1 && pages.map((p) => (
             <button
               type="button"
-              onClick={() => setCurrentPage(totalPages)}
-              className="px-3 py-1 text-[13px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors"
+              key={p}
+              onClick={() => setCurrentPage(p)}
+              className={`px-2.5 py-1 text-[12px] border rounded-[3px] transition-colors font-medium cursor-pointer ${
+                p === currentPage
+                  ? 'bg-[#F48024] text-white border-[#F48024]'
+                  : 'border-gray-300 hover:bg-gray-100 text-gray-700'
+              }`}
             >
-              {totalPages}
+              {p}
             </button>
-          </>
-        )}
+          ))}
 
-        {currentPage < totalPages && (
-          <button
-            type="button"
-            onClick={() => setCurrentPage(currentPage + 1)}
-            className="px-3 py-1 text-[13px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors"
-          >
-            Next
-          </button>
-        )}
+          {totalPages > 1 && endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && <span className="px-0.5 text-gray-400">…</span>}
+              <button
+                type="button"
+                onClick={() => setCurrentPage(totalPages)}
+                className="px-2.5 py-1 text-[12px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors font-medium cursor-pointer"
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
+
+          {totalPages > 1 && currentPage < totalPages && (
+            <button
+              type="button"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="px-2.5 py-1 text-[12px] border border-gray-300 rounded-[3px] hover:bg-gray-100 text-gray-700 transition-colors font-medium cursor-pointer"
+            >
+              Next
+            </button>
+          )}
+        </div>
+
+        {/* Right Side: Page Size Selector (mimicking Stack Overflow exactly) */}
+        <div className="flex items-center gap-1.5 text-xs text-gray-600 font-sans">
+          {[15, 30, 50].map((size) => (
+            <button
+              type="button"
+              key={size}
+              onClick={() => {
+                setLimit(size);
+                setCurrentPage(1);
+              }}
+              className={`px-2.5 py-1 text-[12px] border rounded-[3px] transition-all duration-150 font-medium cursor-pointer ${
+                limit === size
+                  ? 'bg-[#F48024] text-white border-[#F48024]'
+                  : 'border-gray-300 hover:bg-gray-100 text-gray-700'
+              }`}
+            >
+              {size}
+            </button>
+          ))}
+          <span className="ml-1 text-gray-500 text-[11px] font-normal">per page</span>
+        </div>
+
       </div>
     );
   };
