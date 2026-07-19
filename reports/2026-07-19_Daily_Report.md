@@ -27,6 +27,14 @@
 - **5-Part Commit Staging:** Organized and committed all modifications into 5 distinct logical chunks (Backend Connection Optimizations, Controllers/Models, Frontend API/Settings, Avatar Uploads, and Layout polishing).
 - **Pushed to Origin:** Successfully pushed all 5 commits to the remote GitHub repository at `main` branch.
 
+### 6. Render Keep-Alive & Dynamic CORS Configuration
+- **Keep-Alive Self-Ping:** Added a public `/ping` route that returns `"Server is Active"`. Set up a background `setInterval` in `index.js` that pings itself every 10 minutes to prevent the container from sleeping on the Render Free Tier.
+- **Dynamic CORS Evaluator:** Replaced static CORS config with a dynamic origin evaluation logic in `index.js` that automatically allows requests from local dev (`localhost:5173`/`3000`), the configured `FRONTEND_URL`, and any Render frontend subdomain ending with `.onrender.com`.
+
+### 7. Razorpay Optimization & Logo Favicon Setup
+- **Dynamic Script Injection:** Removed global Razorpay `checkout.js` loading from `index.html` (which was causing continuous background preload warnings in the console). Programmed the script to inject dynamically *only* when the `SubscriptionTab` mounts and remove itself on unmount.
+- **Logo to Favicon Conversion:** Copied the project logo image `Logo.png` into `public/favicon.png` and updated the header link in `index.html` to render it as the site icon, replacing the default React placeholder.
+
 ---
 
 ## 📁 Key Files Modified
@@ -38,12 +46,16 @@
 - [.env](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/backend/.env) (Modified)
 
 ### Frontend
+- [index.html](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/frontend/index.html) (Modified)
 - [api.js](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/frontend/src/services/api.js) (Modified)
 - [Profile.jsx](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/frontend/src/pages/Profile.jsx) (Modified)
 - [AboutPopover.jsx](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/frontend/src/components/layout/Navbar/AboutPopover.jsx) (Modified)
+- [SubscriptionTab.jsx](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/frontend/src/pages/Settings/SubscriptionTab.jsx) (Modified)
+- [favicon.png](file:///c:/Users/anshu/OneDrive/Desktop/Elevance_Skills/frontend/public/favicon.png) (New)
 
 ---
 
 ## 📊 Summary
 
-Today we successfully added **avatar local uploading and external URL integrations** in the Edit Profile modal, optimized **remote MongoDB Atlas connections to resolve 7-10s database buffering timeouts**, exposed **global server stats publicly** to make the navigation popover dynamic for guests, migrated **Nodemailer SMTP to Brevo**, and pushed all changes to the remote branch across **5 separate commits**.
+Today we successfully added **avatar local uploading and external URL integrations** in the Edit Profile modal, optimized **remote MongoDB Atlas connections to resolve 7-10s database buffering timeouts**, exposed **global server stats publicly** to make the navigation popover dynamic for guests, migrated **Nodemailer SMTP to Brevo**, configured **Render keep-alive & dynamic CORS validation**, optimized the **Razorpay SDK to load dynamically** to clear console warnings, and set the **brand logo as the browser favicon**. All features are successfully pushed to GitHub!
+
