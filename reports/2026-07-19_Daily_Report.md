@@ -19,23 +19,28 @@
 - **Public API Exposure:** Removed the `protect` middleware constraint from the `/api/posts/global-stats` route in `post.routes.js`, making the endpoint public.
 - **Visitor Statistics Rendering:** Enabled the "About" popover in the top navigation bar to successfully query actual live database counts (Registered Users, Posted Questions, Tag Collectives) even for logged-out/guest visitors, replacing hardcoded mock statistics.
 
-### 4. Nodemailer SMTP Migration to Gmail (and Latency Adjustments)
-- **Gmail SMTP Configuration:** Restored Gmail SMTP with the verified App Password inside `backend/.env` to provide instant email delivery to `anshuman892494@gmail.com` without DMARC blocks or spam queue deferrals.
-- **Transporter Timeouts:** Increased connection/socket timeouts in `sendEmail.js` from `1500ms` (which was causing connection timeout errors under cloud network fluctuation) to a robust `10000ms`.
-- **Persistent Error Logging:** Enabled dynamic error logs globally in `sendEmail.js` so that SMTP exceptions are always printed directly to the Render Console Logs.
+### 4. Migration to Resend API & Sender Domain Alignment
+- **Resend API Integration:** Replaced Brevo and Nodemailer SMTP fallbacks entirely with a direct HTTP API integration with **Resend** (`https://api.resend.com/emails`) via native Node `fetch`.
+- **Domain Verification Alignment:** Updated the sender email address (`EMAIL_FROM`) to use the verified custom domain `no-reply@connectsphere.anshuman892494.online` since Resend requires the sending domain to be verified.
+- **Successful Delivery Testing:** Verified the integration by sending a test verification email to `anshumanverma9795@gmail.com` (which was delivered successfully with status `success: true`).
+- **Clean Configuration:** Cleaned up `sendEmail.js` and the backend `.env` file to remove all obsolete SMTP, Nodemailer, and Brevo variables.
 
 ### 5. Git Version Control & Code Push
 - **5-Part Commit Staging:** Organized and committed all modifications into 5 distinct logical chunks (Backend Connection Optimizations, Controllers/Models, Frontend API/Settings, Avatar Uploads, and Layout polishing).
-- **Pushed to Origin:** Successfully pushed all 5 commits to the remote GitHub repository at `main` branch.
+- **Refactoring & Domain Commits:** Added new commits for CORS allowlist custom domain mapping and Resend API refactoring.
+- **Pushed to Origin:** Pushed all commits to the remote GitHub repository at `main` branch.
 
-### 6. Render Keep-Alive & Dynamic CORS Configuration
+### 6. Render Keep-Alive & Custom Domain CORS Configuration
 - **Keep-Alive Self-Ping:** Added a public `/ping` route that returns `"Server is Active"`. Set up a background `setInterval` in `index.js` that pings itself every 10 minutes to prevent the container from sleeping on the Render Free Tier.
-- **Dynamic CORS Evaluator:** Replaced static CORS config with a dynamic origin evaluation logic in `index.js` that automatically allows requests from local dev (`localhost:5173`/`3000`), the configured `FRONTEND_URL`, and any Render frontend subdomain ending with `.onrender.com`.
+- **Dynamic CORS Evaluator & Custom Domain Allowlist:** Replaced static CORS config with a dynamic origin evaluation logic in `index.js` and explicitly added the custom domain `https://connectsphere.anshuman892494.online` (along with its `www` subdomain) to the `allowedOrigins` array to fix CORS blocks.
 - **Express Proxy Trust Setting:** Configured `app.set('trust proxy', 1)` in `index.js` to prevent the `express-rate-limit` Validation Error (`ERR_ERL_UNEXPECTED_X_FORWARDED_FOR`) when running behind Render's reverse proxy load balancer.
 
 ### 7. Razorpay Optimization & Logo Favicon Setup
 - **Dynamic Script Injection:** Removed global Razorpay `checkout.js` loading from `index.html` (which was causing continuous background preload warnings in the console). Programmed the script to inject dynamically *only* when the `SubscriptionTab` mounts and remove itself on unmount.
 - **Logo to Favicon Conversion:** Copied the project logo image `Logo.png` into `public/favicon.png` and updated the header link in `index.html` to render it as the site icon, replacing the default React placeholder.
+
+### 8. Google OAuth Origin Mismatch Guidance
+- **Domain Whitelisting Instructions:** Identified the cause of the `Error 400: origin_mismatch` error on the Google login flow. Provided detailed steps to add the custom domain `https://connectsphere.anshuman892494.online` to the **Authorized JavaScript origins** within the Google Cloud Console.
 
 ---
 
@@ -60,5 +65,4 @@
 
 ## 📊 Summary
 
-Today we successfully added **avatar local uploading and external URL integrations** in the Edit Profile modal, optimized **remote MongoDB Atlas connections to resolve 7-10s database buffering timeouts**, exposed **global server stats publicly** to make the navigation popover dynamic for guests, migrated **Nodemailer SMTP to Brevo**, configured **Render keep-alive & dynamic CORS validation**, optimized the **Razorpay SDK to load dynamically** to clear console warnings, and set the **brand logo as the browser favicon**. All features are successfully pushed to GitHub!
-
+Today we successfully added **avatar local uploading and external URL integrations** in the Edit Profile modal, optimized **remote MongoDB Atlas connections to resolve 7-10s database buffering timeouts**, exposed **global server stats publicly** to make the navigation popover dynamic for guests, migrated the email system to use **Resend API** with custom domain alignment, configured **Render keep-alive & custom domain CORS validation**, resolved Google OAuth `origin_mismatch` settings guidance, optimized the **Razorpay SDK to load dynamically** to clear console warnings, and set the **brand logo as the browser favicon**. All features are successfully pushed to GitHub!
