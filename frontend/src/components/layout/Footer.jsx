@@ -49,7 +49,7 @@ const Footer = () => {
                   href="https://stackoverflow.co/" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="hover:text-white transition-colors block"
+                  className="hover:text-white transition-colors"
                 >
                   About
                 </a>
@@ -59,7 +59,7 @@ const Footer = () => {
                   href="https://stackoverflow.co/company/press/" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="hover:text-white transition-colors block"
+                  className="hover:text-white transition-colors"
                 >
                   Press
                 </a>
@@ -69,7 +69,7 @@ const Footer = () => {
                   href="https://stackoverflow.co/company/careers" 
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="hover:text-white transition-colors block"
+                  className="hover:text-white transition-colors"
                 >
                   Work Here
                 </a>
@@ -77,7 +77,7 @@ const Footer = () => {
               <li>
                 <Link 
                   to="/contact" 
-                  className="hover:text-white transition-colors block"
+                  className="hover:text-white transition-colors"
                 >
                   Contact Us
                 </Link>
@@ -89,10 +89,38 @@ const Footer = () => {
           <div>
             <h5 className="font-bold uppercase text-[12px] text-white mb-3 tracking-wide">Products</h5>
             <ul className="space-y-2">
-              <li onClick={() => handleFeatureClick('Teams')} className="hover:text-white transition-colors cursor-pointer">Teams</li>
-              <li onClick={() => handleFeatureClick('Advertising')} className="hover:text-white transition-colors cursor-pointer">Advertising</li>
-              <li onClick={() => handleFeatureClick('Collectives')} className="hover:text-white transition-colors cursor-pointer">Collectives</li>
-              <li onClick={() => handleFeatureClick('Talent')} className="hover:text-white transition-colors cursor-pointer">Talent</li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Teams')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Teams
+                </span>
+              </li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Advertising')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Advertising
+                </span>
+              </li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Collectives')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Collectives
+                </span>
+              </li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Talent')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Talent
+                </span>
+              </li>
             </ul>
           </div>
 
@@ -100,10 +128,38 @@ const Footer = () => {
           <div>
             <h5 className="font-bold uppercase text-[12px] text-white mb-3 tracking-wide">Stack Exchange Network</h5>
             <ul className="space-y-2">
-              <li onClick={() => handleFeatureClick('Technology Network')} className="hover:text-white transition-colors cursor-pointer">Technology</li>
-              <li onClick={() => handleFeatureClick('Culture & Recreation')} className="hover:text-white transition-colors cursor-pointer">Culture & recreation</li>
-              <li onClick={() => handleFeatureClick('Life & Arts')} className="hover:text-white transition-colors cursor-pointer">Life & arts</li>
-              <li onClick={() => handleFeatureClick('Network API')} className="hover:text-white transition-colors cursor-pointer">API</li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Technology Network')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Technology
+                </span>
+              </li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Culture & Recreation')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Culture & recreation
+                </span>
+              </li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Life & Arts')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Life & arts
+                </span>
+              </li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Network API')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  API
+                </span>
+              </li>
             </ul>
           </div>
 
