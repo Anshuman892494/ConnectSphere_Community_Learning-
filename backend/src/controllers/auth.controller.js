@@ -182,6 +182,16 @@ exports.register = async (req, res, next) => {
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
+    // Detect environment and track initial login history
+    const env = detectEnvironment(req);
+    user.loginHistory.push({
+      browser: env.browser,
+      os: env.os,
+      device: env.device,
+      ipAddress: env.ipAddress,
+      loginTime: new Date()
+    });
+
     // Save refresh token to user
     user.refreshToken = refreshToken;
     await user.save();
