@@ -156,13 +156,13 @@ exports.register = async (req, res, next) => {
 
     // Send email verification OTP in the background to avoid blocking
     sendOTPEmail(email, emailOtp, username)
-      .catch(err => console.error('[Nodemailer Error] Registration email failed:', err));
+      .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Registration email failed:', err));
 
     // Send SMS verification OTP if phone is provided in the background
     if (phone) {
       sendSMS(phone, `Your ConnectSphere phone verification code is: ${phoneOtp}`)
-        .catch(err => console.error('[Twilio Error] Registration SMS failed:', err));
-    } else {
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Twilio Error] Registration SMS failed:', err));
+    } else if (process.env.NODE_ENV !== 'production') {
       // Print OTPs to server console for testing if phone is not provided
       console.log('\n=========================================');
       console.log(`[DEV ONLY] OTP codes for ${username}:`);
@@ -187,7 +187,7 @@ exports.register = async (req, res, next) => {
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     });
 
-    res.status(201).json({
+    const responseData = {
       _id: user._id,
       username: user.username,
       email: user.email,
@@ -198,10 +198,16 @@ exports.register = async (req, res, next) => {
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       language: user.language,
+      avatar: user.avatar || '',
       token: accessToken,
-      _devEmailOtp: emailOtp,
-      _devPhoneOtp: phoneOtp,
-    });
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+      responseData._devEmailOtp = emailOtp;
+      responseData._devPhoneOtp = phoneOtp;
+    }
+
+    res.status(201).json(responseData);
   } catch (error) {
     next(error);
   }
@@ -249,14 +255,17 @@ exports.login = async (req, res, next) => {
 
       // Send login OTP email in the background to avoid blocking
       sendLoginOTPEmail(user.email, loginOtp, user.username)
-        .catch(err => console.error('[Nodemailer Error] Login OTP email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Login OTP email failed:', err));
 
-      return res.json({
+      const responseData = {
         requireOtp: true,
         email: user.email,
         message: 'OTP verification code sent to your registered email address.',
-        _devOtp: loginOtp
-      });
+      };
+      if (process.env.NODE_ENV !== 'production') {
+        responseData._devOtp = loginOtp;
+      }
+      return res.json(responseData);
     }
 
     // Other browsers / Microsoft Edge bypass: login immediately
@@ -495,14 +504,19 @@ exports.resendEmailCode = async (req, res, next) => {
 
     // Send email verification OTP in the background
     sendOTPEmail(user.email, code, user.username)
-      .catch(err => console.error('[Nodemailer Error] Resend verification email failed:', err));
+      .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Resend verification email failed:', err));
 
-    console.log(`[DEV ONLY] Resent Email OTP: ${code}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[DEV ONLY] Resent Email OTP: ${code}`);
+    }
 
-    res.json({
+    const responseData = {
       message: 'Verification code sent to your email',
-      _devEmailOtp: code,
-    });
+    };
+    if (process.env.NODE_ENV !== 'production') {
+      responseData._devEmailOtp = code;
+    }
+    res.json(responseData);
   } catch (error) {
     next(error);
   }
@@ -510,6 +524,7 @@ exports.resendEmailCode = async (req, res, next) => {
 
 // @desc    Resend Phone OTP
 // @route   POST /api/auth/resend-phone
+// exports.resendPhoneCode = async (req, res, next) => {
 exports.resendPhoneCode = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id);
@@ -524,15 +539,18 @@ exports.resendPhoneCode = async (req, res, next) => {
 
     if (user.phone) {
       sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${code}`)
-        .catch(err => console.error('[Twilio Error] Resend SMS failed:', err));
-    } else {
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Twilio Error] Resend SMS failed:', err));
+    } else if (process.env.NODE_ENV !== 'production') {
       console.log(`[DEV ONLY] Resent SMS OTP: ${code}`);
     }
 
-    res.json({
+    const responseData = {
       message: 'Verification code sent via SMS',
-      _devPhoneOtp: code,
-    });
+    };
+    if (process.env.NODE_ENV !== 'production') {
+      responseData._devPhoneOtp = code;
+    }
+    res.json(responseData);
   } catch (error) {
     next(error);
   }
@@ -598,16 +616,16 @@ exports.updateVerificationContacts = async (req, res, next) => {
     // Send email verification OTP if updated in the background
     if (emailChanged) {
       sendOTPEmail(user.email, user.emailVerificationCode, user.username)
-        .catch(err => console.error('[Nodemailer Error] Update verification email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Update verification email failed:', err));
     }
 
     // Send SMS verification OTP if phone was updated in the background
     if (devOtp.phoneOtp) {
       sendSMS(user.phone, `Your ConnectSphere phone verification code is: ${devOtp.phoneOtp}`)
-        .catch(err => console.error('[Twilio Error] Update SMS failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Twilio Error] Update SMS failed:', err));
     }
 
-    if (devOtp.emailOtp || devOtp.phoneOtp) {
+    if ((devOtp.emailOtp || devOtp.phoneOtp) && process.env.NODE_ENV !== 'production') {
       console.log('\n=========================================');
       console.log(`[DEV ONLY] OTP codes for contact update (${user.username}):`);
       if (devOtp.emailOtp) console.log(`Email OTP: ${devOtp.emailOtp}`);
@@ -615,7 +633,7 @@ exports.updateVerificationContacts = async (req, res, next) => {
       console.log('=========================================\n');
     }
 
-    res.json({
+    const responseData = {
       message: 'Contact details updated successfully',
       user: {
         _id: user._id,
@@ -626,10 +644,15 @@ exports.updateVerificationContacts = async (req, res, next) => {
         isEmailVerified: user.isEmailVerified,
         isPhoneVerified: user.isPhoneVerified,
         language: user.language,
-      },
-      _devEmailOtp: devOtp.emailOtp,
-      _devPhoneOtp: devOtp.phoneOtp,
-    });
+      }
+    };
+
+    if (process.env.NODE_ENV !== 'production') {
+      responseData._devEmailOtp = devOtp.emailOtp;
+      responseData._devPhoneOtp = devOtp.phoneOtp;
+    }
+
+    res.json(responseData);
   } catch (error) {
     next(error);
   }
@@ -711,19 +734,24 @@ exports.forgotPassword = async (req, res, next) => {
     // Trigger email send in the background if user has email
     if (user.email) {
       sendPasswordResetEmail(user.email, tempPassword, user.username)
-        .catch(err => console.error('[Nodemailer Error] Password reset email failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Password reset email failed:', err));
     }
 
     // Log the generated password to server console for testing/verification
-    console.log('\n=========================================');
-    console.log(`[PASSWORD RESET] For user: ${user.username}`);
-    console.log(`New generated password: ${tempPassword}`);
-    console.log('=========================================\n');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n=========================================');
+      console.log(`[PASSWORD RESET] For user: ${user.username}`);
+      console.log(`New generated password: ${tempPassword}`);
+      console.log('=========================================\n');
+    }
 
-    res.json({
+    const responseData = {
       message: 'Your password has been successfully reset. The new password has been sent to your registered email/phone number.',
-      tempPassword, // Include for dev-testing convenience in the UI
-    });
+    };
+    if (process.env.NODE_ENV !== 'production') {
+      responseData.tempPassword = tempPassword;
+    }
+    res.json(responseData);
   } catch (error) {
     next(error);
   }
@@ -792,15 +820,17 @@ exports.requestLanguageChange = async (req, res, next) => {
     if (language === 'fr') {
       // Send OTP to email in the background
       sendOTPEmail(user.email, otpCode, user.username)
-        .catch(err => console.error('[Nodemailer Error] Language change email failed:', err));
-      console.log(`\n[EMAIL GATEWAY] Sent Language Swap OTP to ${user.email} for switching to ${language}: ${otpCode}\n`);
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Language change email failed:', err));
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`\n[EMAIL GATEWAY] Sent Language Swap OTP to ${user.email} for switching to ${language}: ${otpCode}\n`);
+      }
     } else {
       // Authenticate via mobile number (send OTP to registered mobile number)
       if (!user.phone) {
         return res.status(400).json({ message: 'Please register a mobile number first to change your language settings' });
       }
       sendSMS(user.phone, `Your ConnectSphere verification code for switching language to ${language.toUpperCase()} is: ${otpCode}`)
-        .catch(err => console.error('[Twilio Error] Language change SMS failed:', err));
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Twilio Error] Language change SMS failed:', err));
     }
 
     res.json({
@@ -942,14 +972,19 @@ exports.googleLogin = async (req, res, next) => {
       user.loginOtpExpires = new Date(Date.now() + 15 * 60 * 1000); // 15 mins expiry
       await user.save();
 
-      await sendLoginOTPEmail(user.email, loginOtp, user.username);
+      // Send login OTP email in the background to avoid blocking
+      sendLoginOTPEmail(user.email, loginOtp, user.username)
+        .catch(err => process.env.NODE_ENV !== 'production' && console.error('[Nodemailer Error] Google Login OTP email failed:', err));
 
-      return res.json({
+      const responseData = {
         requireOtp: true,
         email: user.email,
         message: 'OTP verification code sent to your registered email address.',
-        _devOtp: loginOtp
-      });
+      };
+      if (process.env.NODE_ENV !== 'production') {
+        responseData._devOtp = loginOtp;
+      }
+      return res.json(responseData);
     }
 
     const accessToken = generateAccessToken(user._id);
@@ -992,7 +1027,9 @@ exports.googleLogin = async (req, res, next) => {
       token: accessToken,
     });
   } catch (error) {
-    console.error('Google Login Error:', error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Google Login Error:', error);
+    }
     res.status(401).json({ message: 'Invalid Google token' });
   }
 };

@@ -133,7 +133,20 @@ const UserSchema = new mongoose.Schema(
         ipAddress: { type: String },
         loginTime: { type: Date, default: Date.now }
       }
-    ]
+    ],
+    subscription: {
+      plan: {
+        type: String,
+        enum: ['Free', 'Bronze', 'Silver', 'Gold'],
+        default: 'Free'
+      },
+      expiresAt: {
+        type: Date
+      },
+      paymentTime: {
+        type: Date
+      }
+    }
   },
   {
     timestamps: true,

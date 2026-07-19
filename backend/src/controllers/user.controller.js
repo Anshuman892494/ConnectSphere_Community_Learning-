@@ -43,6 +43,34 @@ exports.getUserProfile = async (req, res, next) => {
       .populate('user', 'username avatar reputation')
       .populate('comments.user', 'username avatar reputation');
 
+    // Dynamic stats calculations
+    const questionsCount = await Post.countDocuments({
+      user: user._id,
+      isSocial: { $ne: true }
+    });
+
+    const allPostsWithUserComments = await Post.find({ 'comments.user': user._id });
+    let answersCount = 0;
+    allPostsWithUserComments.forEach(p => {
+      p.comments.forEach(c => {
+        if (c.user && c.user.toString() === user._id.toString()) {
+          answersCount++;
+        }
+      });
+    });
+
+    const ownQuestions = await Post.find({ user: user._id, isSocial: { $ne: true } });
+    const ownQuestionsViews = ownQuestions.reduce((acc, p) => acc + (p.views || 0), 0);
+    const answeredQuestionsViews = allPostsWithUserComments
+      .filter(p => p.user.toString() !== user._id.toString())
+      .reduce((acc, p) => acc + (p.views || 0), 0);
+
+    const reachedCount = ownQuestionsViews + answeredQuestionsViews;
+
+    userObj.questionsCount = questionsCount;
+    userObj.answersCount = answersCount;
+    userObj.reachedCount = reachedCount;
+
     res.json({ user: userObj, posts });
   } catch (error) {
     next(error);

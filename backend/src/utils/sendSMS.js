@@ -26,10 +26,12 @@ const sendSMS = async (phone, message) => {
 
   // Fallback to Console Print in Dev Mode if credentials are not configured
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-    console.log('\n=========================================');
-    console.log(`[SMS GATEWAY] Sent SMS to: ${phone}`);
-    console.log(`Message: ${message}`);
-    console.log('=========================================\n');
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n=========================================');
+      console.log(`[SMS GATEWAY] Sent SMS to: ${phone}`);
+      console.log(`Message: ${message}`);
+      console.log('=========================================\n');
+    }
     return { success: true, mode: 'dev', message };
   }
 
@@ -38,25 +40,33 @@ const sendSMS = async (phone, message) => {
     try {
       twilio = require('twilio');
     } catch (e) {
-      console.log('\n=========================================');
-      console.log(`[SMS GATEWAY] Twilio package is not installed (npm install twilio).`);
-      console.log(`Sent OTP to: ${phone}`);
-      console.log(`Message: ${message}`);
-      console.log('=========================================\n');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('\n=========================================');
+        console.log(`[SMS GATEWAY] Twilio package is not installed (npm install twilio).`);
+        console.log(`Sent OTP to: ${phone}`);
+        console.log(`Message: ${message}`);
+        console.log('=========================================\n');
+      }
       return { success: true, mode: 'dev-no-package', message };
     }
 
-    const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
+    const client = twilio(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, {
+      timeout: 1500
+    });
     const response = await client.messages.create({
       body: message,
       from: TWILIO_PHONE_NUMBER,
       to: phone,
     });
 
-    console.log(`[Twilio SMS] Message sent to ${phone}: ${response.sid}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[Twilio SMS] Message sent to ${phone}: ${response.sid}`);
+    }
     return { success: true, mode: 'twilio', sid: response.sid };
   } catch (error) {
-    console.error(`[Twilio SMS Error] Failed to send to ${phone}:`, error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error(`[Twilio SMS Error] Failed to send to ${phone}:`, error);
+    }
     return { success: false, mode: 'twilio-error', error: error.message };
   }
 };

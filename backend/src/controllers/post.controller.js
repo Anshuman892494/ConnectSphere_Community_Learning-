@@ -46,6 +46,49 @@ exports.createPost = async (req, res, next) => {
           });
         }
       }
+    } else {
+      const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Calculate start of today in IST
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+      });
+      const parts = formatter.formatToParts(now);
+      const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+      const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+      const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+      
+      const startOfTodayIST = new Date(Date.UTC(year, month, day, 0, 0, 0, 0));
+      const startOfToday = new Date(startOfTodayIST.getTime() - (5.5 * 60 * 60 * 1000));
+
+      const questionsToday = await Post.countDocuments({
+        user: req.user.id,
+        isSocial: { $ne: true },
+        createdAt: { $gte: startOfToday }
+      });
+
+      let plan = user.subscription?.plan || 'Free';
+      if (user.subscription?.expiresAt && user.subscription.expiresAt < new Date()) {
+        plan = 'Free';
+      }
+
+      let limit = 1;
+      if (plan === 'Bronze') limit = 5;
+      else if (plan === 'Silver') limit = 10;
+      else if (plan === 'Gold') limit = Infinity;
+
+      if (questionsToday >= limit) {
+        return res.status(403).json({
+          message: `You have reached your daily question limit of ${limit} post(s) for the ${plan} Plan. Upgrade your subscription plan in Settings to post more questions!`
+        });
+      }
     }
 
     if (!caption || !caption.trim()) {
@@ -705,6 +748,26 @@ exports.getPopularQuestions = async (req, res, next) => {
     ]);
 
     res.json(popular);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Get global stats for verified users, questions, and tags
+// @route   GET /api/posts/global-stats
+// @access  Private
+exports.getGlobalStats = async (req, res, next) => {
+  try {
+    const verifiedUsersCount = await User.countDocuments({ isBlocked: { $ne: true } });
+    const questionsCount = await Post.countDocuments({ isSocial: { $ne: true } });
+    const uniqueTags = await Post.distinct('tags', { isSocial: { $ne: true } });
+    const tagsCount = uniqueTags.length;
+
+    res.json({
+      verifiedUsers: verifiedUsersCount,
+      questionsPosted: questionsCount,
+      tagCollectives: tagsCount
+    });
   } catch (error) {
     next(error);
   }
