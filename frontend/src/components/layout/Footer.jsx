@@ -1,8 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import logo from '../../assets/Logo.png';
+import { useToast } from '../../contexts/ToastContext';
 
 const Footer = () => {
+  const { addToast } = useToast();
+
+  const handleFeatureClick = (name) => {
+    addToast(`${name} page is coming soon!`, 'info');
+  };
+
   return (
     <footer className="bg-[#232629] text-[#babfc4] text-[11px] py-8 md:py-12 border-t border-gray-800 font-sans mt-auto">
       <div className="max-w-[1264px] mx-auto px-4 flex flex-col md:flex-row gap-8 justify-between">
@@ -22,29 +29,70 @@ const Footer = () => {
               <li><Link to="/" className="hover:text-white transition-colors">Questions</Link></li>
               <li><Link to="/tags" className="hover:text-white transition-colors">Tags</Link></li>
               <li><Link to="/users" className="hover:text-white transition-colors">Users</Link></li>
-              <li><Link to="/help" className="hover:text-white transition-colors">Help Center</Link></li>
+              <li>
+                <span 
+                  onClick={() => handleFeatureClick('Help Center')} 
+                  className="hover:text-white transition-colors cursor-pointer"
+                >
+                  Help Center
+                </span>
+              </li>
             </ul>
           </div>
 
-          {/* Column 2: Products */}
-          <div>
-            <h5 className="font-bold uppercase text-[12px] text-white mb-3 tracking-wide">Products</h5>
-            <ul className="space-y-2">
-              <li className="hover:text-white transition-colors cursor-pointer">Teams</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Advertising</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Collectives</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Talent</li>
-            </ul>
-          </div>
-
-          {/* Column 3: Company */}
+          {/* Column 2: Company */}
           <div>
             <h5 className="font-bold uppercase text-[12px] text-white mb-3 tracking-wide">Company</h5>
             <ul className="space-y-2">
-              <li className="hover:text-white transition-colors cursor-pointer">About</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Press</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Work Here</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Contact Us</li>
+              <li>
+                <a 
+                  href="https://stackoverflow.co/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-white transition-colors block"
+                >
+                  About
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://stackoverflow.co/company/press/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-white transition-colors block"
+                >
+                  Press
+                </a>
+              </li>
+              <li>
+                <a 
+                  href="https://stackoverflow.co/company/careers" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-white transition-colors block"
+                >
+                  Work Here
+                </a>
+              </li>
+              <li>
+                <Link 
+                  to="/contact" 
+                  className="hover:text-white transition-colors block"
+                >
+                  Contact Us
+                </Link>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 3: Products */}
+          <div>
+            <h5 className="font-bold uppercase text-[12px] text-white mb-3 tracking-wide">Products</h5>
+            <ul className="space-y-2">
+              <li onClick={() => handleFeatureClick('Teams')} className="hover:text-white transition-colors cursor-pointer">Teams</li>
+              <li onClick={() => handleFeatureClick('Advertising')} className="hover:text-white transition-colors cursor-pointer">Advertising</li>
+              <li onClick={() => handleFeatureClick('Collectives')} className="hover:text-white transition-colors cursor-pointer">Collectives</li>
+              <li onClick={() => handleFeatureClick('Talent')} className="hover:text-white transition-colors cursor-pointer">Talent</li>
             </ul>
           </div>
 
@@ -52,10 +100,10 @@ const Footer = () => {
           <div>
             <h5 className="font-bold uppercase text-[12px] text-white mb-3 tracking-wide">Stack Exchange Network</h5>
             <ul className="space-y-2">
-              <li className="hover:text-white transition-colors cursor-pointer">Technology</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Culture & recreation</li>
-              <li className="hover:text-white transition-colors cursor-pointer">Life & arts</li>
-              <li className="hover:text-white transition-colors cursor-pointer">API</li>
+              <li onClick={() => handleFeatureClick('Technology Network')} className="hover:text-white transition-colors cursor-pointer">Technology</li>
+              <li onClick={() => handleFeatureClick('Culture & Recreation')} className="hover:text-white transition-colors cursor-pointer">Culture & recreation</li>
+              <li onClick={() => handleFeatureClick('Life & Arts')} className="hover:text-white transition-colors cursor-pointer">Life & arts</li>
+              <li onClick={() => handleFeatureClick('Network API')} className="hover:text-white transition-colors cursor-pointer">API</li>
             </ul>
           </div>
 
@@ -64,10 +112,10 @@ const Footer = () => {
         {/* Right: Copyright info */}
         <div className="flex flex-col justify-between items-start md:items-end text-[#9199a1]">
           <div className="flex gap-3 text-xs mb-4 md:mb-0">
-            <span className="hover:text-white cursor-pointer transition-colors">Blog</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Facebook</span>
-            <span className="hover:text-white cursor-pointer transition-colors">Twitter</span>
-            <span className="hover:text-white cursor-pointer transition-colors">LinkedIn</span>
+            <span onClick={() => handleFeatureClick('Blog')} className="hover:text-white cursor-pointer transition-colors">Blog</span>
+            <span onClick={() => handleFeatureClick('Facebook')} className="hover:text-white cursor-pointer transition-colors">Facebook</span>
+            <span onClick={() => handleFeatureClick('Twitter')} className="hover:text-white cursor-pointer transition-colors">Twitter</span>
+            <span onClick={() => handleFeatureClick('LinkedIn')} className="hover:text-white cursor-pointer transition-colors">LinkedIn</span>
           </div>
           <p className="mt-auto md:text-right max-w-xs text-[#9199a1] leading-relaxed">
             Site design / logo © 2026 ConnectSphere Community Learning. All rights reserved. Stack Overflow content licensed under CC BY-SA.

@@ -27,7 +27,7 @@ const Users = () => {
   }, []);
 
   const filteredUsers = users.filter((u) =>
-    u.username.toLowerCase().includes(searchQuery.toLowerCase())
+    u && u.username && u.username.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (loading) {
@@ -64,15 +64,15 @@ const Users = () => {
           {filteredUsers.map((u) => (
             <div key={u._id} className="flex gap-3 p-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-[3px] transition-colors">
               {u.avatar ? (
-                <img src={u.avatar} alt={u.username} className="w-12 h-12 rounded-[3px] object-cover flex-shrink-0" />
+                <img src={u.avatar} alt={u.username || 'User'} className="w-12 h-12 rounded-[3px] object-cover flex-shrink-0" />
               ) : (
                 <div className="w-12 h-12 rounded-[3px] bg-indigo-600 text-white flex items-center justify-center font-bold text-lg uppercase flex-shrink-0">
-                  {u.username.charAt(0)}
+                  {u.username ? u.username.charAt(0) : '?'}
                 </div>
               )}
               <div className="min-w-0">
-                <Link to={`/profile/${u.username}`} className="text-[#0074CC] hover:text-[#0A95FF] font-medium text-sm block truncate">
-                  {u.username}
+                <Link to={`/profile/${u.username || ''}`} className="text-[#0074CC] hover:text-[#0A95FF] font-medium text-sm block truncate">
+                  {u.username || 'Unknown User'}
                 </Link>
                 <span className="text-[11px] text-gray-500 block truncate">
                   Joined {new Date(u.createdAt).toLocaleDateString()}
