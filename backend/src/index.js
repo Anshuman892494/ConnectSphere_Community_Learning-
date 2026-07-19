@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 
 // Ping endpoint for keep-alive monitoring
 app.get('/ping', (req, res) => {
-  res.json({ status: 'ok', message: 'pong' });
+  res.json({ status: 'ok', message: 'Server is Active' });
 });
 
 // Global Error Handler
