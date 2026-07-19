@@ -6,6 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import API from '../services/api';
 import logo from '../assets/Logo.png';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useGoogleLogin } from '@react-oauth/google';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -20,6 +21,83 @@ const Register = () => {
   const { isLoading, error } = useSelector((state) => state.auth);
   const { addToast } = useToast();
   const { t } = useLanguage();
+
+  // OTP Verification States for Google Login/Signup
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [devOtp, setDevOtp] = useState('');
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+
+  // Heuristic device classification
+  const getDeviceType = () => {
+    const ua = navigator.userAgent;
+    if (/Mobi|Android|iPhone|iPad|iPod/i.test(ua)) {
+      return 'mobile';
+    }
+    return window.screen.width <= 1600 ? 'laptop' : 'desktop';
+  };
+
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (tokenResponse) => {
+      try {
+        dispatch(loginStart());
+        const deviceType = getDeviceType();
+        const response = await API.post('/auth/google', {
+          token: tokenResponse.access_token,
+          deviceType
+        });
+        
+        if (response.data.requireOtp) {
+          dispatch(loginFailure(null)); // Clear loading state
+          setOtpEmail(response.data.email);
+          setDevOtp(response.data._devOtp || '');
+          setShowOtpModal(true);
+          addToast(response.data.message || 'OTP Verification required.', 'info');
+        } else {
+          dispatch(loginSuccess(response.data));
+          addToast(`Welcome, ${response.data.username}!`, 'success');
+          navigate('/');
+        }
+      } catch (err) {
+        const msg = err.response?.data?.message || 'Google signup failed.';
+        dispatch(loginFailure(msg));
+        addToast(msg, 'error');
+      }
+    },
+    onError: (error) => {
+      console.error('Google signup Failed', error);
+      addToast('Google signup failed. Please try again.', 'error');
+    }
+  });
+
+  const handleVerifyOtp = async (e) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      addToast('Please enter a 6-digit OTP code', 'error');
+      return;
+    }
+
+    setIsVerifyingOtp(true);
+    try {
+      const deviceType = getDeviceType();
+      const response = await API.post('/auth/login/verify-otp', {
+        email: otpEmail,
+        otpCode,
+        rememberMe: true,
+        deviceType
+      });
+      dispatch(loginSuccess(response.data));
+      addToast(`Welcome back, ${response.data.username}!`, 'success');
+      setShowOtpModal(false);
+      navigate('/');
+    } catch (err) {
+      const msg = err.response?.data?.message || 'OTP verification failed.';
+      addToast(msg, 'error');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
 
   const validate = () => {
     const tempErrors = {};
@@ -73,8 +151,72 @@ const Register = () => {
   };
 
   return (
-    <div className="flex justify-center items-center text-[#242729] font-sans py-12 px-4 w-full">
+    <div className="flex justify-center items-center text-[#242729] font-sans py-12 px-4 w-full relative">
       
+      {/* OTP Verification Modal Overlay */}
+      {showOtpModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white w-full max-w-[380px] rounded-lg shadow-2xl p-6 border border-gray-100 flex flex-col gap-4">
+            <h2 className="text-[20px] font-bold text-gray-900 text-center">Chrome Login Verification</h2>
+            <p className="text-sm text-gray-600 text-center">
+              We've sent a 6-digit verification code to <span className="font-semibold text-gray-900">{otpEmail}</span>.
+            </p>
+
+            {import.meta.env.DEV && devOtp && (
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[12px] text-amber-800 flex flex-col gap-1">
+                <span className="font-bold uppercase tracking-wider text-[10px] text-amber-600">Developer Mode Assistant</span>
+                <div className="flex justify-between items-center">
+                  <span>Login OTP is: <strong className="font-mono text-sm">{devOtp}</strong></span>
+                  <button
+                    onClick={() => {
+                      setOtpCode(devOtp);
+                      addToast('Code autofilled!', 'info');
+                    }}
+                    className="text-[#0074CC] hover:underline font-semibold"
+                  >
+                    Autofill
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleVerifyOtp} className="space-y-4">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="otp" className="font-bold text-[14px] text-gray-800">
+                  Enter 6-Digit OTP Code
+                </label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  id="otp"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  placeholder="000000"
+                  className="w-full p-2.5 text-center text-xl font-mono tracking-[0.5em] border border-gray-300 rounded focus:outline-none focus:ring-4 focus:ring-[#0A95FF]/20 focus:border-[#0A95FF]"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="submit"
+                  disabled={isVerifyingOtp || otpCode.length !== 6}
+                  className="flex-1 py-2 bg-[#0A95FF] hover:bg-[#0074CC] text-white rounded font-bold text-[13px] shadow transition-colors disabled:opacity-50"
+                >
+                  {isVerifyingOtp ? 'Verifying...' : 'Verify & Log in'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowOtpModal(false)}
+                  className="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded text-[13px] font-semibold transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Container for text (hidden on small screens) and form */}
       <div className="flex gap-12 items-center max-w-[800px] w-full">
         
@@ -130,7 +272,7 @@ const Register = () => {
             <button
               type="button"
               className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-[5px] border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[13px] text-[#3B4045] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800/80 dark:hover:text-white transition-colors shadow-sm"
-              onClick={() => addToast('Google signup via backend only currently', 'info')}
+              onClick={() => handleGoogleLogin()}
             >
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
                 <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.64 5.64 0 0 1 8.35 13a5.64 5.64 0 0 1 5.64-5.6c1.478 0 2.822.56 3.84 1.48l3.18-3.18C18.99 3.86 16.59 2.8 13.99 2.8A10.2 10.2 0 0 0 3.8 13a10.2 10.2 0 0 0 10.19 10.2c5.61 0 10.21-4.07 10.21-10.2 0-.62-.06-1.22-.16-1.8H12.24Z" />
