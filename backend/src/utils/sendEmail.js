@@ -27,9 +27,9 @@ const sendOTPEmail = async (email, otp, username) => {
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
-      connectionTimeout: 1500,
-      greetingTimeout: 1500,
-      socketTimeout: 2000,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const mailOptions = {
@@ -53,9 +53,7 @@ const sendOTPEmail = async (email, otp, username) => {
     }
     return { success: true, mode: 'smtp', messageId: info.messageId };
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`[Nodemailer Error] Failed to send email to ${email}:`, error);
-    }
+    console.error(`[Nodemailer Error] Failed to send email to ${email}:`, error);
     return { success: false, mode: 'smtp-error', error: error.message };
   }
 };
@@ -87,9 +85,9 @@ const sendPasswordResetEmail = async (email, password, username) => {
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
-      connectionTimeout: 1500,
-      greetingTimeout: 1500,
-      socketTimeout: 2000,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const mailOptions = {
@@ -113,9 +111,7 @@ const sendPasswordResetEmail = async (email, password, username) => {
     }
     return { success: true, mode: 'smtp', messageId: info.messageId };
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`[Nodemailer Error] Failed to send password reset email to ${email}:`, error);
-    }
+    console.error(`[Nodemailer Error] Failed to send password reset email to ${email}:`, error);
     return { success: false, mode: 'smtp-error', error: error.message };
   }
 };
@@ -147,9 +143,9 @@ const sendLoginOTPEmail = async (email, otp, username) => {
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
-      connectionTimeout: 1500,
-      greetingTimeout: 1500,
-      socketTimeout: 2000,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const mailOptions = {
@@ -173,9 +169,7 @@ const sendLoginOTPEmail = async (email, otp, username) => {
     }
     return { success: true, mode: 'smtp', messageId: info.messageId };
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`[Nodemailer Error] Failed to send login OTP email to ${email}:`, error);
-    }
+    console.error(`[Nodemailer Error] Failed to send login OTP email to ${email}:`, error);
     return { success: false, mode: 'smtp-error', error: error.message };
   }
 };
@@ -209,9 +203,9 @@ const sendSubscriptionInvoiceEmail = async (email, username, planName, amount, i
         user: SMTP_USER,
         pass: SMTP_PASS,
       },
-      connectionTimeout: 1500,
-      greetingTimeout: 1500,
-      socketTimeout: 2000,
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000,
     });
 
     const mailOptions = {
@@ -240,9 +234,7 @@ const sendSubscriptionInvoiceEmail = async (email, username, planName, amount, i
     }
     return { success: true, mode: 'smtp', messageId: info.messageId };
   } catch (error) {
-    if (process.env.NODE_ENV !== 'production') {
-      console.error(`[Nodemailer Error] Failed to send subscription invoice email to ${email}:`, error);
-    }
+    console.error(`[Nodemailer Error] Failed to send subscription invoice email to ${email}:`, error);
     return { success: false, mode: 'smtp-error', error: error.message };
   }
 };
