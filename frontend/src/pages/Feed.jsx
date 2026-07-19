@@ -62,6 +62,8 @@ const Feed = () => {
         setTotalPages(response.data.totalPages || 1);
         setTotalQuestions(response.data.total || 0);
       }
+      // Scroll to top of viewport on feed updates (page change, tab change, etc.)
+      window.scrollTo({ top: 0, behavior: 'instant' });
     } catch (err) {
       addToast('Failed to retrieve social feed.', 'error');
     } finally {

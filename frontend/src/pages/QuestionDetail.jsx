@@ -45,6 +45,11 @@ const QuestionDetail = () => {
   }, [id, fetchQuestion]);
 
   const handleVote = async (voteType) => {
+    if (!user) {
+      addToast('You must be logged in to vote on questions.', 'warning');
+      navigate('/login');
+      return;
+    }
     try {
       const res = await API.post(`/posts/${id}/vote`, { voteType });
       setPost(res.data);
@@ -65,6 +70,11 @@ const QuestionDetail = () => {
 
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
+    if (!user) {
+      addToast('You must be logged in to answer questions.', 'warning');
+      navigate('/login');
+      return;
+    }
     if (!newAnswer.trim()) return;
 
     setIsSubmitting(true);
@@ -81,6 +91,7 @@ const QuestionDetail = () => {
   };
 
   const handleDeleteQuestion = async () => {
+    if (!user) return;
     if (!window.confirm('Are you sure you want to delete this question?')) return;
 
     try {
@@ -93,6 +104,7 @@ const QuestionDetail = () => {
   };
 
   const handleDeleteAnswer = async (commentId) => {
+    if (!user) return;
     if (!window.confirm('Are you sure you want to delete this answer?')) return;
 
     try {
@@ -105,6 +117,11 @@ const QuestionDetail = () => {
   };
 
   const handleBookmark = async () => {
+    if (!user) {
+      addToast('You must be logged in to bookmark questions.', 'warning');
+      navigate('/login');
+      return;
+    }
     try {
       const res = await API.post(`/posts/${id}/bookmark`);
       setIsBookmarked(res.data.isBookmarked);
@@ -116,6 +133,11 @@ const QuestionDetail = () => {
   };
 
   const handleVoteAnswer = async (commentId, voteType) => {
+    if (!user) {
+      addToast('You must be logged in to vote on answers.', 'warning');
+      navigate('/login');
+      return;
+    }
     try {
       const res = await API.post(`/posts/${id}/comment/${commentId}/vote`, { voteType });
       setPost(res.data);
@@ -125,6 +147,11 @@ const QuestionDetail = () => {
   };
 
   const handleAcceptAnswer = async (commentId) => {
+    if (!user) {
+      addToast('You must be logged in to accept answers.', 'warning');
+      navigate('/login');
+      return;
+    }
     try {
       const res = await API.post(`/posts/${id}/accept/${commentId}`);
       setPost(res.data);
@@ -361,29 +388,45 @@ const QuestionDetail = () => {
 
           {/* Add Answer Box */}
           <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-[19px] font-normal text-gray-800 mb-4">Your Answer</h3>
-            <form onSubmit={handleSubmitAnswer} className="space-y-4">
-              <textarea
-                placeholder="Write your answer here... Supports Markdown formatting."
-                rows={8}
-                value={newAnswer}
-                onChange={(e) => setNewAnswer(e.target.value)}
-                className="w-full border border-gray-300 rounded p-3 font-mono text-sm focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
-                required
-              />
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !newAnswer.trim()}
-                  className="bg-[#0A95FF] hover:bg-[#0074CC] text-white font-bold py-2 px-4 rounded-[3px] disabled:opacity-50 transition-colors cursor-pointer"
-                >
-                  {isSubmitting ? 'Posting...' : 'Post Your Answer'}
-                </button>
-                <p className="text-xs text-gray-500">
-                  Provide detailed explanations, code snippets, or reference links.
+            <h3 className="text-[19px] font-normal text-gray-800 mb-4 font-sans">Your Answer</h3>
+            {user ? (
+              <form onSubmit={handleSubmitAnswer} className="space-y-4">
+                <textarea
+                  placeholder="Write your answer here... Supports Markdown formatting."
+                  rows={8}
+                  value={newAnswer}
+                  onChange={(e) => setNewAnswer(e.target.value)}
+                  className="w-full border border-gray-300 rounded p-3 font-mono text-sm focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
+                  required
+                />
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !newAnswer.trim()}
+                    className="bg-[#0A95FF] hover:bg-[#0074CC] text-white font-bold py-2 px-4 rounded-[3px] disabled:opacity-50 transition-colors cursor-pointer"
+                  >
+                    {isSubmitting ? 'Posting...' : 'Post Your Answer'}
+                  </button>
+                  <p className="text-xs text-gray-500">
+                    Provide detailed explanations, code snippets, or reference links.
+                  </p>
+                </div>
+              </form>
+            ) : (
+              <div className="bg-[#fdf7e2] border border-[#e6e4c4] p-5 rounded-[3px] text-[13px] text-gray-700 flex flex-col items-center gap-3">
+                <p className="text-center font-medium">
+                  To answer this question, you must have an account. Join the community to help others!
                 </p>
+                <div className="flex gap-2">
+                  <Link to="/login" className="bg-[#e1ecf4] hover:bg-[#b3d3ea] border border-[#7aa7c7] text-[#39739d] px-4 py-2 rounded-[3px] font-medium transition-colors cursor-pointer">
+                    Log in
+                  </Link>
+                  <Link to="/register" className="bg-[#0A95FF] hover:bg-[#0074CC] text-white px-4 py-2 rounded-[3px] font-medium transition-colors cursor-pointer">
+                    Sign up
+                  </Link>
+                </div>
               </div>
-            </form>
+            )}
           </div>
         </div>
       </div>

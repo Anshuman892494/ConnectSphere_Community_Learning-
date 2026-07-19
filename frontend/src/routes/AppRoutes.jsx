@@ -6,7 +6,7 @@ import ProtectedRoute from './ProtectedRoute';
 const ScrollToTop = () => {
   const { pathname } = useLocation();
   React.useEffect(() => {
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   }, [pathname]);
   return null;
 };
@@ -24,6 +24,7 @@ const Users = lazy(() => import('../pages/Users'));
 const Tags = lazy(() => import('../pages/Tags'));
 const AskQuestion = lazy(() => import('../pages/AskQuestion'));
 const SocialSpace = lazy(() => import('../pages/SocialSpace'));
+const Contact = lazy(() => import('../pages/Contact'));
 
 // Layout Components
 import Sidebar from '../components/layout/Sidebar';
@@ -69,18 +70,22 @@ const AppRoutes = () => {
           <Route path="/verify" element={<Verify />} />
         </Route>
 
+        {/* Public viewable pages with layout */}
+        <Route element={<DashboardLayout />}>
+          <Route path="/" element={<Feed />} />
+          <Route path="/questions" element={<Feed />} />
+          <Route path="/questions/:id" element={<QuestionDetail />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/tags" element={<Tags />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/contact" element={<Contact />} />
+        </Route>
+
         {/* Protected Routes Group */}
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
-            {/* Main User Dashboard / Feed */}
-            <Route path="/" element={<Feed />} />
-            <Route path="/questions" element={<Feed />} />
             <Route path="/social" element={<SocialSpace />} />
             <Route path="/questions/ask" element={<AskQuestion />} />
-            <Route path="/questions/:id" element={<QuestionDetail />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/tags" element={<Tags />} />
-            <Route path="/profile/:username" element={<Profile />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
         </Route>

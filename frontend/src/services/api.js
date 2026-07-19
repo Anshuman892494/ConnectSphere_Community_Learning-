@@ -67,7 +67,11 @@ API.interceptors.response.use(
         // Refresh failed: session expired, log out the user
         store.dispatch(logout());
 
-        if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/register')) {
+        // Check if the current page is a public page (where guests are allowed)
+        const publicPaths = ['/login', '/register', '/forgot-password', '/verify', '/questions', '/users', '/tags', '/profile'];
+        const isPublicPath = window.location.pathname === '/' || publicPaths.some(path => window.location.pathname.startsWith(path));
+
+        if (!isPublicPath) {
           window.location.href = '/login?expired=true';
         }
         return Promise.reject(error); // Reject with original request error instead of refresh error
