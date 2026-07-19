@@ -57,7 +57,7 @@ const ForgotPassword = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center px-4 bg-[#F1F2F3] font-sans text-[#242729]">
+    <div className="flex flex-col justify-center items-center px-4 font-sans text-[#242729] w-full py-8">
       
       {/* Logo Section */}
       <div className="flex flex-col items-center mb-6">

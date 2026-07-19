@@ -149,7 +149,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-[#F1F2F3] text-[#242729] font-sans relative">
+    <div className="flex flex-col justify-center items-center text-[#242729] font-sans relative w-full py-8">
       
       {/* OTP Verification Modal Overlay */}
       {showOtpModal && (
@@ -229,7 +229,7 @@ const Login = () => {
         <button
           type="button"
           onClick={() => handleGoogleLogin()}
-          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-[5px] border border-gray-300 bg-white text-[13px] text-[#3B4045] hover:bg-gray-50 transition-colors shadow-sm"
+          className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-[5px] border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[13px] text-[#3B4045] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800/80 dark:hover:text-white transition-colors shadow-sm"
         >
           <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
             <path fill="#EA4335" d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.2-5.136 4.2A5.64 5.64 0 0 1 8.35 13a5.64 5.64 0 0 1 5.64-5.6c1.478 0 2.822.56 3.84 1.48l3.18-3.18C18.99 3.86 16.59 2.8 13.99 2.8A10.2 10.2 0 0 0 3.8 13a10.2 10.2 0 0 0 10.19 10.2c5.61 0 10.21-4.07 10.21-10.2 0-.62-.06-1.22-.16-1.8H12.24Z" />

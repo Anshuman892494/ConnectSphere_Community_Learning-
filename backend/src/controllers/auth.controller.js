@@ -120,14 +120,21 @@ exports.register = async (req, res, next) => {
     }
 
     // Check if username, email, or phone already exists
-    const orConditions = [{ email }, { username }];
-    if (phone) {
-      orConditions.push({ phone });
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: 'Display name is already registered' });
     }
 
-    const userExists = await User.findOne({ $or: orConditions });
-    if (userExists) {
-      return res.status(400).json({ message: 'Username, email, or phone number already registered' });
+    if (phone) {
+      const existingPhone = await User.findOne({ phone });
+      if (existingPhone) {
+        return res.status(400).json({ message: 'Phone number is already registered' });
+      }
+    }
+
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      return res.status(400).json({ message: 'Email address is already registered' });
     }
 
     // Generate simple 6-digit OTPs

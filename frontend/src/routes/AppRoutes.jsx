@@ -56,15 +56,28 @@ const DashboardLayout = () => {
   );
 };
 
+const AuthLayout = () => {
+  return (
+    <div className="min-h-screen flex flex-col bg-[#F1F2F3] dark:bg-[#0b0f19] font-sans">
+      <Navbar />
+      <div className="flex-1 flex items-center justify-center pt-[50px] w-full">
+        <Outlet />
+      </div>
+    </div>
+  );
+};
+
 const AppRoutes = () => {
   return (
     <Suspense fallback={<PageLoader />}>
       <ScrollToTop />
       <Routes>
         {/* Public Pages */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+        </Route>
 
         {/* Verification page (accessible only to logged in but unverified users) */}
         <Route element={<ProtectedRoute allowUnverified={true} />}>

@@ -34,8 +34,13 @@ const Register = () => {
       tempErrors.phone = 'Valid phone format expected (e.g. +1234567890)';
     }
 
-    if (!password) tempErrors.password = 'Password is required';
-    else if (password.length < 6) tempErrors.password = 'Password must be at least 6 characters';
+    if (!password) {
+      tempErrors.password = 'Password is required';
+    } else if (password.length < 8) {
+      tempErrors.password = 'Password must be at least 8 characters';
+    } else if (!/(?=.*[A-Za-z])(?=.*\d)/.test(password)) {
+      tempErrors.password = 'Password must contain at least 1 letter and 1 number';
+    }
     
     if (password !== confirmPassword) {
       tempErrors.confirmPassword = 'Passwords do not match';
@@ -68,7 +73,7 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-[#F1F2F3] text-[#242729] font-sans py-12 px-4">
+    <div className="flex justify-center items-center text-[#242729] font-sans py-12 px-4 w-full">
       
       {/* Container for text (hidden on small screens) and form */}
       <div className="flex gap-12 items-center max-w-[800px] w-full">
@@ -110,7 +115,7 @@ const Register = () => {
         </div>
 
         {/* Right Form Area */}
-        <div className="w-full max-w-[316px] mx-auto flex flex-col items-center">
+        <div className="w-full max-w-[500px] mx-auto flex flex-col items-center">
           
           {/* Logo (shown above the form on all screens) */}
           <div className="mb-6 flex items-center justify-center gap-2.5">
@@ -124,7 +129,7 @@ const Register = () => {
           <div className="w-full flex flex-col gap-2 mb-4">
             <button
               type="button"
-              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-[5px] border border-gray-300 bg-white text-[13px] text-[#3B4045] hover:bg-gray-50 transition-colors shadow-sm"
+              className="flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-[5px] border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[13px] text-[#3B4045] dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800/80 dark:hover:text-white transition-colors shadow-sm"
               onClick={() => addToast('Google signup via backend only currently', 'info')}
             >
               <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24">
@@ -138,88 +143,98 @@ const Register = () => {
           <div className="w-full bg-white rounded-[7px] shadow-xl p-6 mb-6">
             <form className="space-y-4" onSubmit={handleSubmit}>
               
-              <div className="flex flex-col gap-1">
-                <label htmlFor="username" className="font-bold text-[15px] text-[#0C0D0E]">
-                  Display name
-                </label>
-                <input
-                  type="text"
-                  id="username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                    errors.username ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                  }`}
-                />
-                {errors.username && <span className="text-[12px] text-red-500 mt-1">{errors.username}</span>}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                {/* Display name */}
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="username" className="font-bold text-[15px] text-[#0C0D0E]">
+                    Display name
+                  </label>
+                  <input
+                    type="text"
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
+                      errors.username ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
+                    }`}
+                  />
+                  {errors.username && <span className="text-[12px] text-red-500 mt-1">{errors.username}</span>}
+                </div>
+
+                {/* Phone Number */}
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="phone" className="font-bold text-[15px] text-[#0C0D0E]">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
+                      errors.phone ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
+                    }`}
+                  />
+                  {errors.phone && <span className="text-[12px] text-red-500 mt-1">{errors.phone}</span>}
+                </div>
+
+                {/* Email */}
+                <div className="flex flex-col gap-1 sm:col-span-2">
+                  <label htmlFor="email" className="font-bold text-[15px] text-[#0C0D0E]">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
+                      errors.email ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
+                    }`}
+                  />
+                  {errors.email && <span className="text-[12px] text-red-500 mt-1">{errors.email}</span>}
+                </div>
+
+                {/* Password */}
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="password" className="font-bold text-[15px] text-[#0C0D0E]">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
+                      errors.password ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
+                    }`}
+                  />
+                  {errors.password && <span className="text-[12px] text-red-500 mt-1">{errors.password}</span>}
+                </div>
+
+                {/* Confirm Password */}
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="confirmPassword" className="font-bold text-[15px] text-[#0C0D0E]">
+                    Confirm Password
+                  </label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
+                      errors.confirmPassword ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
+                    }`}
+                  />
+                  {errors.confirmPassword && <span className="text-[12px] text-red-500 mt-1">{errors.confirmPassword}</span>}
+                </div>
+
               </div>
 
-              <div className="flex flex-col gap-1">
-                <label htmlFor="email" className="font-bold text-[15px] text-[#0C0D0E]">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                    errors.email ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                  }`}
-                />
-                {errors.email && <span className="text-[12px] text-red-500 mt-1">{errors.email}</span>}
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label htmlFor="phone" className="font-bold text-[15px] text-[#0C0D0E]">
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                    errors.phone ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                  }`}
-                />
-                {errors.phone && <span className="text-[12px] text-red-500 mt-1">{errors.phone}</span>}
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label htmlFor="password" className="font-bold text-[15px] text-[#0C0D0E]">
-                  Password
-                </label>
-                <input
-                  type="password"
-                  id="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                    errors.password ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                  }`}
-                />
-                <p className="text-[12px] text-gray-500 mt-1 mb-1 leading-snug">
-                  Passwords must contain at least six characters.
-                </p>
-                {errors.password && <span className="text-[12px] text-red-500">{errors.password}</span>}
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label htmlFor="confirmPassword" className="font-bold text-[15px] text-[#0C0D0E]">
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full p-2 text-sm border rounded-[3px] focus:outline-none focus:ring-4 focus:ring-[#0074CC]/20 ${
-                    errors.confirmPassword ? 'border-red-500' : 'border-gray-300 focus:border-[#0074CC]'
-                  }`}
-                />
-                {errors.confirmPassword && <span className="text-[12px] text-red-500 mt-1">{errors.confirmPassword}</span>}
-              </div>
+              <p className="text-[12px] text-gray-500 mt-1 mb-1 leading-snug">
+                Must contain 8+ characters, including at least 1 letter and 1 number.
+              </p>
 
               {error && (
                 <div className="p-3 bg-[#FDF2F5] border border-[#DE4B59] text-[#C22E32] text-[13px] rounded-[3px]">
