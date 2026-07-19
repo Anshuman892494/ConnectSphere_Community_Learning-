@@ -18,7 +18,9 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  'https://connectsphere-community-learning-frontend.onrender.com'
+  'https://connectsphere-community-learning-frontend.onrender.com',
+  'https://connectsphere.anshuman892494.online',
+  'https://www.connectsphere.anshuman892494.online'
 ];
 
 app.use(cors({
