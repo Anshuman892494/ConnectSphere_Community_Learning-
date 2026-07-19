@@ -5,6 +5,7 @@ import { Heart, MessageCircle, Share2, Image, Video, Film, Send, Users, UserPlus
 import API from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getMediaUrl } from '../utils/media';
 
 const SocialSpace = () => {
   const { user: currentUser } = useSelector((state) => state.auth);
@@ -248,7 +249,7 @@ const SocialSpace = () => {
           <form onSubmit={handleCreatePost} className="space-y-4">
             <div className="flex gap-3">
               {currentUser.avatar ? (
-                <img src={currentUser.avatar} alt={currentUser.username} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+                <img src={getMediaUrl(currentUser.avatar)} alt={currentUser.username} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-indigo-600 text-white flex items-center justify-center font-bold text-sm uppercase flex-shrink-0">
                   {currentUser.username.charAt(0)}
@@ -334,7 +335,7 @@ const SocialSpace = () => {
                   {/* Post Author Header */}
                   <div className="flex items-center gap-3 p-4">
                     {post.user?.avatar ? (
-                      <img src={post.user.avatar} alt={post.user.username} className="w-10 h-10 rounded-full object-cover" />
+                      <img src={getMediaUrl(post.user.avatar)} alt={post.user.username} className="w-10 h-10 rounded-full object-cover" />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-sm uppercase">
                         {post.user?.username?.charAt(0) || '?'}
@@ -369,9 +370,9 @@ const SocialSpace = () => {
                   {post.mediaUrl && (
                     <div className="border-y border-gray-100 bg-black flex items-center justify-center max-h-[500px] overflow-hidden">
                       {post.type === 'video' ? (
-                        <video src={post.mediaUrl} controls className="max-h-[500px] w-full object-contain" />
+                        <video src={getMediaUrl(post.mediaUrl)} controls className="max-h-[500px] w-full object-contain" />
                       ) : (
-                        <img src={post.mediaUrl} alt="Social Media" className="max-h-[500px] w-full object-contain" />
+                        <img src={getMediaUrl(post.mediaUrl)} alt="Social Media" className="max-h-[500px] w-full object-contain" />
                       )}
                     </div>
                   )}
@@ -423,7 +424,7 @@ const SocialSpace = () => {
                           {post.comments.map((comment) => (
                             <div key={comment._id} className="flex gap-2">
                               {comment.user?.avatar ? (
-                                <img src={comment.user.avatar} alt={comment.user.username} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
+                                <img src={getMediaUrl(comment.user.avatar)} alt={comment.user.username} className="w-8 h-8 rounded-full object-cover flex-shrink-0" />
                               ) : (
                                 <div className="w-8 h-8 rounded-full bg-purple-500 text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
                                   {comment.user?.username?.charAt(0) || '?'}
@@ -495,7 +496,7 @@ const SocialSpace = () => {
                 <div key={friend._id} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {friend.avatar ? (
-                      <img src={friend.avatar} alt={friend.username} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                      <img src={getMediaUrl(friend.avatar)} alt={friend.username} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
                         {friend.username.charAt(0)}
@@ -533,7 +534,7 @@ const SocialSpace = () => {
                 <div key={rec._id} className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     {rec.avatar ? (
-                      <img src={rec.avatar} alt={rec.username} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+                      <img src={getMediaUrl(rec.avatar)} alt={rec.username} className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
                     ) : (
                       <div className="w-7 h-7 rounded-full bg-gray-500 text-white flex items-center justify-center font-bold text-xs uppercase flex-shrink-0">
                         {rec.username.charAt(0)}

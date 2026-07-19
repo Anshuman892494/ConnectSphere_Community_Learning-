@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, ArrowUp } from 'lucide-react';
+import { getMediaUrl } from '../../utils/media';
 
 const QuestionCard = ({
   post,
@@ -108,7 +109,7 @@ const QuestionCard = ({
           {/* Author Info */}
           <div className="flex items-center text-[12px] text-gray-500 gap-2 flex-shrink-0 bg-gray-50/50 px-2 py-1 rounded border border-gray-100 sm:ml-auto">
             {post.user?.avatar ? (
-              <img src={post.user.avatar} alt={postOwnerName} className="w-4 h-4 rounded-sm object-cover" />
+              <img src={getMediaUrl(post.user.avatar)} alt={postOwnerName} className="w-4 h-4 rounded-sm object-cover" />
             ) : (
               <div className="w-4 h-4 rounded-sm bg-indigo-600 text-white flex items-center justify-center font-bold text-[8px] uppercase">
                 {postOwnerName.charAt(0)}

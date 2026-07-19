@@ -11,6 +11,7 @@ import API from '../services/api';
 import { useToast } from '../contexts/ToastContext';
 import { useLanguage } from '../contexts/LanguageContext';
 import AnswerCard from '../components/common/AnswerCard';
+import { getMediaUrl } from '../utils/media';
 
 const QuestionDetail = () => {
   const { id } = useParams();
@@ -291,15 +292,15 @@ const QuestionDetail = () => {
             </div>
           </div>
 
-          {post.mediaUrl && (
-            <div className="mb-6 rounded-md border border-gray-200 overflow-hidden max-w-lg">
-              {post.type === 'video' ? (
-                <video src={post.mediaUrl} controls className="w-full object-cover" />
-              ) : (
-                <img src={post.mediaUrl} alt="Attached context" className="w-full object-cover" />
-              )}
-            </div>
-          )}
+           {post.mediaUrl && (
+             <div className="mb-6 rounded-md border border-gray-200 overflow-hidden max-w-lg">
+               {post.type === 'video' ? (
+                 <video src={getMediaUrl(post.mediaUrl)} controls className="w-full object-cover" />
+               ) : (
+                 <img src={getMediaUrl(post.mediaUrl)} alt="Attached context" className="w-full object-cover" />
+               )}
+             </div>
+           )}
 
           {/* Tags */}
           <div className="flex flex-wrap gap-1 mb-6">
@@ -345,7 +346,7 @@ const QuestionDetail = () => {
               </span>
               <div className="flex items-center gap-2">
                 {post.user?.avatar ? (
-                  <img src={post.user.avatar} alt={postOwnerName} className="w-8 h-8 rounded-sm object-cover" />
+                  <img src={getMediaUrl(post.user.avatar)} alt={postOwnerName} className="w-8 h-8 rounded-sm object-cover" />
                 ) : (
                   <div className="w-8 h-8 rounded-sm bg-purple-600 text-white flex items-center justify-center font-bold text-sm uppercase">
                     {postOwnerName.charAt(0)}

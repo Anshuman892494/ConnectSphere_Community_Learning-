@@ -5,6 +5,7 @@ import { Inbox, Trophy, HelpCircle, LogOut, Menu } from 'lucide-react';
 import { logout, updateUser } from '../../store/authSlice';
 import { toggleMobileSidebar } from '../../store/themeSlice';
 import API from '../../services/api';
+import { getMediaUrl } from '../../utils/media';
 
 import BrandLogo from './Navbar/BrandLogo';
 import SearchBar from './Navbar/SearchBar';
@@ -101,7 +102,7 @@ const Navbar = () => {
                     className="flex items-center hover:bg-[#e3e6e8] px-3 h-[50px] transition-colors duration-150"
                   >
                     {user.avatar ? (
-                      <img src={user.avatar} alt={user.username} className="h-6 w-6 rounded object-cover" />
+                      <img src={getMediaUrl(user.avatar)} alt={user.username} className="h-6 w-6 rounded object-cover" />
                     ) : (
                       <div className="h-6 w-6 rounded bg-[#a259ff] text-white flex items-center justify-center font-bold text-[11px]">
                         {user.username.charAt(0).toUpperCase()}

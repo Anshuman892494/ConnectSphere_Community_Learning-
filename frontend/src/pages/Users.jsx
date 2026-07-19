@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import API from '../services/api';
 import { useToast } from '../contexts/ToastContext';
+import { getMediaUrl } from '../utils/media';
 
 const Users = () => {
   const [users, setUsers] = useState([]);
@@ -64,7 +65,7 @@ const Users = () => {
           {filteredUsers.map((u) => (
             <div key={u._id} className="flex gap-3 p-3 bg-white hover:bg-gray-50 border border-gray-200 rounded-[3px] transition-colors">
               {u.avatar ? (
-                <img src={u.avatar} alt={u.username || 'User'} className="w-12 h-12 rounded-[3px] object-cover flex-shrink-0" />
+                <img src={getMediaUrl(u.avatar)} alt={u.username || 'User'} className="w-12 h-12 rounded-[3px] object-cover flex-shrink-0" />
               ) : (
                 <div className="w-12 h-12 rounded-[3px] bg-indigo-600 text-white flex items-center justify-center font-bold text-lg uppercase flex-shrink-0">
                   {u.username ? u.username.charAt(0) : '?'}

@@ -10,6 +10,7 @@ import { useToast } from '../contexts/ToastContext';
 import { updateUser } from '../store/authSlice';
 import EmptyState from '../components/common/EmptyState';
 import { useLanguage } from '../contexts/LanguageContext';
+import { getMediaUrl } from '../utils/media';
 import PreferencesTab from './Settings/PreferencesTab';
 import SecurityTab from './Settings/SecurityTab';
 import LanguageTab from './Settings/LanguageTab';
@@ -445,7 +446,7 @@ const Profile = () => {
         <div className="flex flex-wrap items-center gap-4 md:gap-5 pb-5 border-b border-gray-200">
           <div className="w-16 h-16 md:w-20 md:h-20 rounded-md border border-gray-200 overflow-hidden shadow-sm flex-shrink-0">
             {profileUser.avatar ? (
-              <img src={profileUser.avatar} alt="Avatar" className="w-full h-full object-cover" />
+              <img src={getMediaUrl(profileUser.avatar)} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-purple-600 text-white flex items-center justify-center font-bold text-2xl uppercase">
                 {profileUser.username?.charAt(0)}
@@ -589,7 +590,7 @@ const Profile = () => {
                 profileUser.friends.map(friend => (
                   <div key={friend._id} className="flex items-center gap-2">
                     {friend.avatar ? (
-                      <img src={friend.avatar} alt={friend.username} className="w-6 h-6 rounded-full object-cover" />
+                      <img src={getMediaUrl(friend.avatar)} alt={friend.username} className="w-6 h-6 rounded-full object-cover" />
                     ) : (
                       <div className="w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold text-[9px] uppercase">
                         {friend.username.charAt(0)}
@@ -1191,7 +1192,7 @@ const Profile = () => {
                   <div className="w-16 h-16 rounded-md border border-gray-200 overflow-hidden shadow-sm flex-shrink-0 bg-white flex items-center justify-center">
                     {editForm.avatar ? (
                       <img
-                        src={editForm.avatar}
+                        src={getMediaUrl(editForm.avatar)}
                         alt="Avatar Preview"
                         className="w-full h-full object-cover"
                         onError={(e) => {

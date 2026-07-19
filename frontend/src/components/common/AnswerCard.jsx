@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronUp, ChevronDown, Check } from 'lucide-react';
 import { useToast } from '../../contexts/ToastContext';
+import { getMediaUrl } from '../../utils/media';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
@@ -169,7 +170,7 @@ const AnswerCard = ({
 
           <div className="flex items-center gap-2 bg-gray-50/50 px-2 py-1 rounded border border-gray-100">
             {comment.user?.avatar ? (
-              <img src={comment.user.avatar} alt={commentOwnerName} className="w-5 h-5 rounded-sm object-cover" />
+              <img src={getMediaUrl(comment.user.avatar)} alt={commentOwnerName} className="w-5 h-5 rounded-sm object-cover" />
             ) : (
               <div className="w-5 h-5 rounded-sm bg-blue-600 text-white flex items-center justify-center font-bold text-[9px] uppercase">
                 {commentOwnerName.charAt(0)}
