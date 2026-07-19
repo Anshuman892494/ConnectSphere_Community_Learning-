@@ -76,10 +76,3 @@ ConnectSphere is a premium, feature-rich **Social Learning & Community Q&A Platf
 * **Restricted Payment Hour:** Purchases/Upgrades through Razorpay can only be conducted between **10:00 AM and 11:00 AM IST**.
 
 ---
-
-## 📈 Platform Optimization & DevOps
-
-* **MongoDB Latency Optimizations:** Mongoose is configured with `family: 4` and default DNS resolution order set to `ipv4first` to reduce Atlas connection latency from 10 seconds to less than 1.5 seconds.
-* **Render Sleep Prevention (Keep-Alive):** Server pings its own public `/ping` route every 10 minutes to prevent the web service from going idle on the Render Free Tier.
-* **Dynamic CORS Allowlist:** Evaluates origins dynamically and resolves CORS blocks for verified domains (`https://connectsphere.anshuman892494.online`).
-* **Proxy Trust Integration:** Express uses `trust proxy` enabled settings to accurately track IP addresses for rate limiting behind reverse proxies.
