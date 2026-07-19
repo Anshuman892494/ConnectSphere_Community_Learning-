@@ -1,75 +1,142 @@
 import React, { useState, useEffect } from 'react';
-import { Mail, Check, Bell } from 'lucide-react';
+import { Mail, Check, Bell, Loader2 } from 'lucide-react';
 import { useSelector } from 'react-redux';
+import API from '../../../services/api';
 
 const InboxDropdown = ({ onClose }) => {
   const { user } = useSelector((state) => state.auth);
+  const [dbNotifications, setDbNotifications] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNotifications = async () => {
+    try {
+      const response = await API.get('/users/notifications');
+      const list = response.data.filter((item) => !item.isAchievement);
+      setDbNotifications(list);
+    } catch (err) {
+      console.error('Failed to fetch notifications:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchNotifications();
+    }
+  }, [user]);
+
+  const timeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    if (seconds < 60) return 'Just now';
+    
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
 
   useEffect(() => {
     if (!user) return;
     
-    const list = [];
+    const systemList = [];
     
     // 1. Verification warning
     if (!user.isEmailVerified || !user.isPhoneVerified) {
       const items = [];
       if (!user.isEmailVerified) items.push('email');
       if (!user.isPhoneVerified) items.push('phone');
-      list.push({
+      systemList.push({
         id: 'verify',
         type: 'system',
         title: 'Complete profile verification',
         body: `Please verify your ${items.join(' and ')} in settings to secure your account.`,
         time: 'Just now',
-        read: false
+        read: false,
+        isDb: false
       });
     }
 
     // 2. Subscription status
     const plan = user.subscription?.plan || 'Free';
     if (plan === 'Free') {
-      list.push({
+      systemList.push({
         id: 'sub',
         type: 'system',
         title: 'Upgrade your subscription',
         body: 'You are on the Free plan. Upgrade to Bronze, Silver or Gold for higher daily question limits.',
         time: '1 hour ago',
-        read: false
+        read: false,
+        isDb: false
       });
     } else {
-      list.push({
+      systemList.push({
         id: 'sub',
         type: 'system',
         title: `Active ${plan} Plan`,
         body: `Thank you for supporting ConnectSphere! Your ${plan} plan is fully active.`,
         time: 'Active',
-        read: true
+        read: true,
+        isDb: false
       });
     }
 
     // 3. Reputation milestone
     const rep = user.reputation || 1;
-    list.push({
+    systemList.push({
       id: 'rep',
       type: 'badge',
       title: `Reputation Score: ${rep}`,
       body: `You have accumulated ${rep} reputation points. Keep participating to unlock more benefits!`,
       time: 'Live',
-      read: true
+      read: true,
+      isDb: false
     });
 
-    setNotifications(list);
-  }, [user]);
+    // Map DB notifications
+    const dbMapped = dbNotifications.map(item => ({
+      id: item._id,
+      type: item.type,
+      title: item.type === 'comment' ? 'New Answer' : 'System Notification',
+      body: item.reason,
+      time: timeAgo(item.createdAt),
+      read: item.read,
+      isDb: true
+    }));
 
-  const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    setNotifications([...systemList, ...dbMapped]);
+  }, [user, dbNotifications]);
+
+  const markAllRead = async () => {
+    try {
+      await API.put('/users/notifications/read');
+      fetchNotifications();
+    } catch (err) {
+      console.error('Failed to mark all as read:', err);
+    }
   };
 
-  const toggleRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n));
+  const toggleRead = async (item) => {
+    if (item.isDb) {
+      try {
+        const response = await API.put(`/users/notifications/${item.id}/read`);
+        setDbNotifications(prev => prev.map(n => n._id === item.id ? response.data : n));
+      } catch (err) {
+        console.error('Failed to toggle read status:', err);
+      }
+    } else {
+      setNotifications(prev => prev.map(n => n.id === item.id ? { ...n, read: !n.read } : n));
+    }
   };
-
 
   return (
     <div className="absolute right-0 top-[50px] w-[360px] bg-white border border-[#e3e6e8] rounded shadow-xl z-50 text-[13px] text-gray-800 overflow-hidden transform origin-top-right transition-all font-sans">
@@ -89,7 +156,12 @@ const InboxDropdown = ({ onClose }) => {
 
       {/* List */}
       <div className="divide-y divide-[#e3e6e8] max-h-[320px] overflow-y-auto">
-        {notifications.length === 0 ? (
+        {loading ? (
+          <div className="p-8 flex justify-center items-center text-gray-500 gap-2">
+            <Loader2 size={16} className="animate-spin" />
+            <span>Loading notifications...</span>
+          </div>
+        ) : notifications.length === 0 ? (
           <div className="px-4 py-8 text-center text-gray-500">
             No notifications yet
           </div>
@@ -97,7 +169,7 @@ const InboxDropdown = ({ onClose }) => {
           notifications.map((item) => (
             <div 
               key={item.id} 
-              onClick={() => toggleRead(item.id)}
+              onClick={() => toggleRead(item)}
               className={`p-3 hover:bg-[#f8f9f9] transition-colors duration-150 cursor-pointer flex gap-3 relative ${
                 !item.read ? 'bg-[#f4f8fb]' : ''
               }`}

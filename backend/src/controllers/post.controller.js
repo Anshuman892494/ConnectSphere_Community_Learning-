@@ -1,5 +1,6 @@
 const Post = require('../models/Post');
 const User = require('../models/User');
+const Notification = require('../models/Notification');
 
 // @desc    Create a new post
 // @route   POST /api/posts
@@ -247,6 +248,17 @@ exports.addComment = async (req, res, next) => {
     // Give +5 reputation for answering
     await User.findByIdAndUpdate(req.user.id, { $inc: { reputation: 5 } });
 
+    // Create notification for post owner
+    if (post.user.toString() !== req.user.id) {
+      await Notification.create({
+        recipient: post.user,
+        sender: req.user.id,
+        type: 'comment',
+        reason: `${req.user.username} answered your question "${post.caption}"`,
+        isAchievement: false
+      });
+    }
+
     const updatedPost = await Post.findById(post._id)
       .populate('user', 'username avatar reputation')
       .populate('comments.user', 'username avatar reputation');
@@ -338,30 +350,56 @@ exports.votePost = async (req, res, next) => {
         post.downvotes.splice(downIndex, 1);
         // Restore rep lost from downvote
         await User.findByIdAndUpdate(postOwnerId, { $inc: { reputation: 2 } });
+        // Clean up downvote notification
+        await Notification.deleteOne({ recipient: postOwnerId, sender: userId, type: 'reputation', change: '-2' });
       }
       if (upIndex > -1) {
         // Toggle off upvote
         post.upvotes.splice(upIndex, 1);
         await User.findByIdAndUpdate(postOwnerId, { $inc: { reputation: -10 } });
+        // Clean up upvote notification
+        await Notification.deleteOne({ recipient: postOwnerId, sender: userId, type: 'reputation', change: '+10' });
       } else {
         // Toggle on upvote: +10 rep to post owner
         post.upvotes.push(userId);
         await User.findByIdAndUpdate(postOwnerId, { $inc: { reputation: 10 } });
+        // Create upvote notification
+        await Notification.create({
+          recipient: postOwnerId,
+          sender: userId,
+          type: 'reputation',
+          change: '+10',
+          reason: `Upvote on your question "${post.caption}"`,
+          isAchievement: true
+        });
       }
     } else if (voteType === 'downvote') {
       if (upIndex > -1) {
         post.upvotes.splice(upIndex, 1);
         // Remove rep gained from upvote
         await User.findByIdAndUpdate(postOwnerId, { $inc: { reputation: -10 } });
+        // Clean up upvote notification
+        await Notification.deleteOne({ recipient: postOwnerId, sender: userId, type: 'reputation', change: '+10' });
       }
       if (downIndex > -1) {
         // Toggle off downvote
         post.downvotes.splice(downIndex, 1);
         await User.findByIdAndUpdate(postOwnerId, { $inc: { reputation: 2 } });
+        // Clean up downvote notification
+        await Notification.deleteOne({ recipient: postOwnerId, sender: userId, type: 'reputation', change: '-2' });
       } else {
         // Toggle on downvote: -2 rep to post owner
         post.downvotes.push(userId);
         await User.findByIdAndUpdate(postOwnerId, { $inc: { reputation: -2 } });
+        // Create downvote notification
+        await Notification.create({
+          recipient: postOwnerId,
+          sender: userId,
+          type: 'reputation',
+          change: '-2',
+          reason: 'Your question received a downvote',
+          isAchievement: true
+        });
       }
     }
 
@@ -414,25 +452,51 @@ exports.voteComment = async (req, res, next) => {
       if (downIdx > -1) {
         comment.downvotes.splice(downIdx, 1);
         await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: 2 } });
+        // Clean up downvote notification
+        await Notification.deleteOne({ recipient: answerOwnerId, sender: userId, type: 'reputation', change: '-2' });
       }
       if (upIdx > -1) {
         comment.upvotes.splice(upIdx, 1);
         await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: -10 } });
+        // Clean up upvote notification
+        await Notification.deleteOne({ recipient: answerOwnerId, sender: userId, type: 'reputation', change: '+10' });
       } else {
         comment.upvotes.push(userId);
         await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: 10 } });
+        // Create upvote notification
+        await Notification.create({
+          recipient: answerOwnerId,
+          sender: userId,
+          type: 'reputation',
+          change: '+10',
+          reason: `Your answer on "${post.caption}" was upvoted`,
+          isAchievement: true
+        });
       }
     } else if (voteType === 'downvote') {
       if (upIdx > -1) {
         comment.upvotes.splice(upIdx, 1);
         await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: -10 } });
+        // Clean up upvote notification
+        await Notification.deleteOne({ recipient: answerOwnerId, sender: userId, type: 'reputation', change: '+10' });
       }
       if (downIdx > -1) {
         comment.downvotes.splice(downIdx, 1);
         await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: 2 } });
+        // Clean up downvote notification
+        await Notification.deleteOne({ recipient: answerOwnerId, sender: userId, type: 'reputation', change: '-2' });
       } else {
         comment.downvotes.push(userId);
         await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: -2 } });
+        // Create downvote notification
+        await Notification.create({
+          recipient: answerOwnerId,
+          sender: userId,
+          type: 'reputation',
+          change: '-2',
+          reason: `Your answer on "${post.caption}" received a downvote`,
+          isAchievement: true
+        });
       }
     }
 
@@ -441,9 +505,19 @@ exports.voteComment = async (req, res, next) => {
     if (upvotesCount >= 5 && !comment.bonusAwarded) {
       comment.bonusAwarded = true;
       await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: 5 } });
+      // Create bonus notification
+      await Notification.create({
+        recipient: answerOwnerId,
+        type: 'reputation',
+        change: '+5',
+        reason: `Reputation bonus: Your answer on "${post.caption}" reached 5 upvotes!`,
+        isAchievement: true
+      });
     } else if (upvotesCount < 5 && comment.bonusAwarded) {
       comment.bonusAwarded = false;
       await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: -5 } });
+      // Remove bonus notification
+      await Notification.deleteOne({ recipient: answerOwnerId, type: 'reputation', change: '+5', reason: new RegExp(post.caption, 'i') });
     }
 
     await post.save();
@@ -488,12 +562,17 @@ exports.acceptAnswer = async (req, res, next) => {
       await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: -15 } });
       // Remove +2 to question asker
       await User.findByIdAndUpdate(req.user.id, { $inc: { reputation: -2 } });
+
+      // Clean up notifications
+      await Notification.deleteOne({ recipient: answerOwnerId, type: 'reputation', change: '+15', reason: new RegExp(post.caption, 'i') });
+      await Notification.deleteOne({ recipient: req.user.id, type: 'reputation', change: '+2', reason: new RegExp(post.caption, 'i') });
     } else {
-      // If another answer was previously accepted, remove its reputation
+      // If another answer was previously accepted, remove its reputation & notification
       if (post.acceptedAnswer) {
         const prevAccepted = post.comments.id(post.acceptedAnswer);
         if (prevAccepted) {
           await User.findByIdAndUpdate(prevAccepted.user.toString(), { $inc: { reputation: -15 } });
+          await Notification.deleteOne({ recipient: prevAccepted.user.toString(), type: 'reputation', change: '+15', reason: new RegExp(post.caption, 'i') });
         }
       }
 
@@ -502,6 +581,36 @@ exports.acceptAnswer = async (req, res, next) => {
       await User.findByIdAndUpdate(answerOwnerId, { $inc: { reputation: 15 } });
       // +2 rep to question asker for accepting
       await User.findByIdAndUpdate(req.user.id, { $inc: { reputation: 2 } });
+
+      // Create notifications
+      await Notification.create({
+        recipient: answerOwnerId,
+        type: 'reputation',
+        change: '+15',
+        reason: `Your answer on "${post.caption}" was accepted`,
+        isAchievement: true
+      });
+
+      await Notification.create({
+        recipient: req.user.id,
+        type: 'reputation',
+        change: '+2',
+        reason: `You accepted an answer on your question "${post.caption}"`,
+        isAchievement: true
+      });
+
+      // Award Scholar Badge if this is their first time accepting an answer
+      const acceptedCount = await Post.countDocuments({ user: req.user.id, acceptedAnswer: { $ne: null } });
+      if (acceptedCount === 0) {
+        await Notification.create({
+          recipient: req.user.id,
+          type: 'badge',
+          badgeClass: 'bronze',
+          badgeName: 'Scholar',
+          reason: 'Earned Scholar badge: Asked a question and accepted an answer',
+          isAchievement: true
+        });
+      }
     }
 
     await post.save();

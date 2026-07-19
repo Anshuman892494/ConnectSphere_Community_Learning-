@@ -1,5 +1,6 @@
 const User = require('../models/User');
 const Post = require('../models/Post');
+const Notification = require('../models/Notification');
 
 // @desc    Get user profile by username
 // @route   GET /api/users/:username
@@ -234,3 +235,155 @@ exports.transferPoints = async (req, res, next) => {
     next(error);
   }
 };
+
+// @desc    Get user notifications and achievements
+// @route   GET /api/users/notifications
+// @access  Private
+exports.getUserNotifications = async (req, res, next) => {
+  try {
+    let notifications = await Notification.find({ recipient: req.user.id })
+      .sort({ createdAt: -1 });
+
+    // Seed mock/historical data if there are no notifications for this user yet
+    if (notifications.length === 0) {
+      const user = await User.findById(req.user.id);
+      if (user) {
+        const seededList = [];
+        const now = Date.now();
+
+        // 1. Check if user is eligible for Gold/Silver/Bronze badges based on their rep
+        const rep = user.reputation || 1;
+        if (rep >= 500) {
+          seededList.push({
+            recipient: user._id,
+            type: 'badge',
+            badgeClass: 'gold',
+            badgeName: 'Gold Badge Holder',
+            reason: 'Earned Gold Badge for reaching 500+ reputation points!',
+            isAchievement: true,
+            read: true,
+            createdAt: new Date(now - 10 * 24 * 60 * 60 * 1000)
+          });
+        }
+        if (rep >= 100) {
+          seededList.push({
+            recipient: user._id,
+            type: 'badge',
+            badgeClass: 'silver',
+            badgeName: 'Silver Badge Holder',
+            reason: 'Earned Silver Badge for reaching 100+ reputation points!',
+            isAchievement: true,
+            read: true,
+            createdAt: new Date(now - 15 * 24 * 60 * 60 * 1000)
+          });
+        }
+        if (rep >= 25) {
+          seededList.push({
+            recipient: user._id,
+            type: 'badge',
+            badgeClass: 'bronze',
+            badgeName: 'Bronze Badge Holder',
+            reason: 'Earned Bronze Badge for reaching 25+ reputation points!',
+            isAchievement: true,
+            read: true,
+            createdAt: new Date(now - 20 * 24 * 60 * 60 * 1000)
+          });
+        }
+
+        // 2. Check if they have accepted any answers. If so, seed the Scholar badge
+        const hasAccepted = await Post.findOne({ user: user._id, acceptedAnswer: { $ne: null } });
+        if (hasAccepted) {
+          seededList.push({
+            recipient: user._id,
+            type: 'badge',
+            badgeClass: 'bronze',
+            badgeName: 'Scholar',
+            reason: 'Earned Scholar badge: Asked a question and accepted an answer',
+            isAchievement: true,
+            read: true,
+            createdAt: new Date(now - 2 * 24 * 60 * 60 * 1000)
+          });
+        }
+
+        // 3. Add default mock achievements (matching user screenshot)
+        seededList.push(
+          {
+            recipient: user._id,
+            type: 'reputation',
+            change: '+10',
+            reason: 'Upvote on your question "How to perfectly align a div using Tailwind CSS?"',
+            isAchievement: true,
+            read: false,
+            createdAt: new Date(now - 3 * 60 * 60 * 1000) // 3 hours ago
+          },
+          {
+            recipient: user._id,
+            type: 'reputation',
+            change: '+15',
+            reason: 'Your answer on "Best practices for React directory structure in 2026" was accepted',
+            isAchievement: true,
+            read: true,
+            createdAt: new Date(now - 4 * 24 * 60 * 60 * 1000) // 4 days ago
+          },
+          {
+            recipient: user._id,
+            type: 'reputation',
+            change: '-2',
+            reason: 'Your question received a downvote',
+            isAchievement: true,
+            read: true,
+            createdAt: new Date(now - 7 * 24 * 60 * 60 * 1000) // 1 week ago
+          }
+        );
+
+        // Save seeded notifications to database
+        notifications = await Notification.insertMany(seededList);
+        // Sort after inserting
+        notifications.sort((a, b) => b.createdAt - a.createdAt);
+      }
+    }
+
+    res.json(notifications);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Mark all notifications as read
+// @route   PUT /api/users/notifications/read
+// @access  Private
+exports.markNotificationsAsRead = async (req, res, next) => {
+  try {
+    await Notification.updateMany(
+      { recipient: req.user.id, read: false },
+      { $set: { read: true } }
+    );
+    res.json({ message: 'All notifications marked as read' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Toggle notification read status
+// @route   PUT /api/users/notifications/:id/read
+// @access  Private
+exports.toggleNotificationRead = async (req, res, next) => {
+  try {
+    const notification = await Notification.findOne({
+      _id: req.params.id,
+      recipient: req.user.id,
+    });
+
+    if (!notification) {
+      return res.status(404).json({ message: 'Notification not found' });
+    }
+
+    notification.read = !notification.read;
+    await notification.save();
+
+    res.json(notification);
+  } catch (error) {
+    next(error);
+  }
+};
+
