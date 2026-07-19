@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { 
@@ -14,6 +14,8 @@ import PreferencesTab from './Settings/PreferencesTab';
 import SecurityTab from './Settings/SecurityTab';
 import LanguageTab from './Settings/LanguageTab';
 import ProfileTab from './Settings/ProfileTab';
+import SubscriptionTab from './Settings/SubscriptionTab';
+import EmailTab from './Settings/EmailTab';
 
 const Profile = () => {
   const { username } = useParams();
@@ -33,6 +35,8 @@ const Profile = () => {
     bio: ''
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [avatarSource, setAvatarSource] = useState('upload'); // 'upload' or 'url'
+  const [isUploading, setIsUploading] = useState(false);
 
   // Settings Tab Inner Section State
   const [settingsSection, setSettingsSection] = useState('preferences');
@@ -108,6 +112,32 @@ const Profile = () => {
   // Profile Edit fields (in Settings)
   const [displayName, setDisplayName] = useState(loggedInUser?.username || '');
   const [bioText, setBioText] = useState(loggedInUser?.bio || '');
+
+  // Calculate top tags dynamically based on user posts
+  const topTags = useMemo(() => {
+    if (!posts || posts.length === 0) return [];
+    
+    const tagScores = {};
+    posts.forEach(post => {
+      if (!post.tags || !Array.isArray(post.tags)) return;
+      const upvotesCount = post.upvotes?.length ?? post.likes?.length ?? 0;
+      const downvotesCount = post.downvotes?.length ?? 0;
+      const score = upvotesCount - downvotesCount;
+      
+      post.tags.forEach(tag => {
+        const normalizedTag = tag.trim().toLowerCase();
+        if (normalizedTag) {
+          tagScores[normalizedTag] = (tagScores[normalizedTag] || 0) + score;
+        }
+      });
+    });
+    
+    // Sort descending by score and pick top 5
+    return Object.entries(tagScores)
+      .map(([name, score]) => ({ name, score }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 5);
+  }, [posts]);
 
   // Sync displayName and bioText when profileUser or loggedInUser is loaded
   useEffect(() => {
@@ -276,6 +306,11 @@ const Profile = () => {
     fetchProfile();
   }, [username]);
 
+  // Scroll to top of viewport when active tab or settings sub-section changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeTab, settingsSection]);
+
   const fetchProfile = async () => {
     try {
       setIsLoading(true);
@@ -320,6 +355,32 @@ const Profile = () => {
     }
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    setIsUploading(true);
+    try {
+      const response = await API.post('/users/profile/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      const relativeUrl = response.data.url;
+      const baseUrl = import.meta.env.VITE_API_URL.replace('/api', '');
+      const absoluteUrl = `${baseUrl}${relativeUrl}`;
+      setEditForm((prev) => ({ ...prev, avatar: absoluteUrl }));
+      addToast('Image uploaded successfully', 'success');
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Failed to upload image', 'error');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="max-w-[1100px] mx-auto p-6 animate-pulse">
@@ -344,9 +405,15 @@ const Profile = () => {
 
   // Calculate stats based on posts and user profile
   const reputation = profileUser?.reputation || 1;
-  const answers = posts.reduce((acc, p) => acc + (p.comments?.length || 0), 0);
-  const questions = posts.length;
-  const reached = '~' + Math.floor((reputation * 13) / 1000) + 'k';
+  const answers = profileUser?.answersCount !== undefined ? profileUser.answersCount : 0;
+  const questions = profileUser?.questionsCount !== undefined ? profileUser.questionsCount : posts.filter(p => !p.isSocial).length;
+  
+  const formatReached = (count) => {
+    if (count === undefined || count === null) return '0';
+    if (count < 1000) return count.toString();
+    return '~' + (count / 1000).toFixed(1) + 'k';
+  };
+  const reached = formatReached(profileUser?.reachedCount);
 
   const goldBadges = Math.floor(reputation / 500);
   const silverBadges = Math.floor((reputation % 500) / 100);
@@ -577,18 +644,20 @@ const Profile = () => {
             
             <h2 className="text-[21px] text-gray-900 mb-2 font-medium">Top tags</h2>
             <div className="border border-gray-300 rounded p-3 bg-white shadow-sm flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="text-[#39739D] bg-[#E1ECF4] px-1.5 py-0.5 rounded-[3px] text-[12px] hover:bg-[#D0E3F1] cursor-pointer">javascript</span>
-                <div className="text-gray-500 flex gap-4"><span className="text-gray-900 font-bold">12</span> <span>score</span></div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#39739D] bg-[#E1ECF4] px-1.5 py-0.5 rounded-[3px] text-[12px] hover:bg-[#D0E3F1] cursor-pointer">reactjs</span>
-                <div className="text-gray-500 flex gap-4"><span className="text-gray-900 font-bold">8</span> <span>score</span></div>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#39739D] bg-[#E1ECF4] px-1.5 py-0.5 rounded-[3px] text-[12px] hover:bg-[#D0E3F1] cursor-pointer">css</span>
-                <div className="text-gray-500 flex gap-4"><span className="text-gray-900 font-bold">5</span> <span>score</span></div>
-              </div>
+              {topTags.length === 0 ? (
+                <span className="text-gray-400 italic">No tags used yet.</span>
+              ) : (
+                topTags.map(tag => (
+                  <div key={tag.name} className="flex items-center justify-between">
+                    <span className="text-[#39739D] bg-[#E1ECF4] px-1.5 py-0.5 rounded-[3px] text-[12px] hover:bg-[#D0E3F1] cursor-pointer">
+                      {tag.name}
+                    </span>
+                    <div className="text-gray-500 flex gap-4">
+                      <span className="text-gray-900 font-bold">{tag.score}</span> <span>score</span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -763,8 +832,10 @@ const Profile = () => {
                 <ul className="space-y-0.5">
                   <li>
                     <button 
-                      onClick={() => addToast('Email frequency options updated.', 'info')}
-                      className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-600 cursor-pointer"
+                      onClick={() => setSettingsSection('email-settings')}
+                      className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                        settingsSection === 'email-settings' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-600'
+                      }`}
                     >
                       {t('editEmailSettings')}
                     </button>
@@ -805,6 +876,16 @@ const Profile = () => {
                       }`}
                     >
                       {t('languageSettings')}
+                    </button>
+                  </li>
+                  <li>
+                    <button 
+                      onClick={() => setSettingsSection('subscription')}
+                      className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                        settingsSection === 'subscription' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-600'
+                      }`}
+                    >
+                      {t('subscriptionPlan')}
                     </button>
                   </li>
                 </ul>
@@ -893,6 +974,14 @@ const Profile = () => {
                 isSwappingLanguage={isSwappingLanguage}
                 handleRequestLanguage={handleRequestLanguage}
               />
+            )}
+
+            {settingsSection === 'subscription' && (
+              <SubscriptionTab />
+            )}
+
+            {settingsSection === 'email-settings' && (
+              <EmailTab />
             )}
 
             {settingsSection === 'edit-profile' && (
@@ -1025,14 +1114,107 @@ const Profile = () => {
             </div>
             <form onSubmit={handleSaveProfile} className="p-6 space-y-4">
               
-              <div>
-                <label className="block font-bold text-[15px] text-gray-900 mb-1">Profile Image URL</label>
-                <input 
-                  type="text" 
-                  value={editForm.avatar}
-                  onChange={(e) => setEditForm({...editForm, avatar: e.target.value})}
-                  className="w-full border border-gray-300 rounded p-2 focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none"
-                />
+              <div className="space-y-4">
+                {/* Image Source Tab Selection */}
+                <div>
+                  <label className="block font-bold text-[14px] text-gray-700 mb-2">Image Source</label>
+                  <div className="flex bg-gray-100 p-1 rounded-md border border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => setAvatarSource('upload')}
+                      className={`flex-1 text-center py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                        avatarSource === 'upload'
+                          ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      Upload Image
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAvatarSource('url')}
+                      className={`flex-1 text-center py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                        avatarSource === 'url'
+                          ? 'bg-white text-gray-900 shadow-sm border border-gray-200/50'
+                          : 'text-gray-500 hover:text-gray-900'
+                      }`}
+                    >
+                      Image URL
+                    </button>
+                  </div>
+                </div>
+
+                {/* Conditional Fields based on Source Selection */}
+                {avatarSource === 'upload' ? (
+                  <div className="space-y-3">
+                    <label className="block font-bold text-[14px] text-gray-700">Select Image File</label>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm text-xs font-semibold text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors border-dashed hover:border-[#0074CC]">
+                        <span>Choose File</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="hidden"
+                        />
+                      </label>
+                      {isUploading && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                          <svg className="animate-spin h-4 w-4 text-[#0074CC]" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          <span>Uploading...</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block font-bold text-[14px] text-gray-700 mb-1">External Image URL</label>
+                    <input
+                      type="text"
+                      placeholder="https://example.com/avatar.jpg"
+                      value={editForm.avatar}
+                      onChange={(e) => setEditForm({ ...editForm, avatar: e.target.value })}
+                      className="w-full border border-gray-300 rounded p-2 text-sm focus:border-[#0074CC] focus:ring-4 focus:ring-[#0074CC]/20 outline-none transition-all"
+                    />
+                  </div>
+                )}
+
+                {/* Live Preview Section */}
+                <div className="flex items-center gap-4 p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                  <div className="w-16 h-16 rounded-md border border-gray-200 overflow-hidden shadow-sm flex-shrink-0 bg-white flex items-center justify-center">
+                    {editForm.avatar ? (
+                      <img
+                        src={editForm.avatar}
+                        alt="Avatar Preview"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://via.placeholder.com/150?text=Invalid+URL';
+                        }}
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-xs italic">No image</span>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-gray-700">Avatar Preview</div>
+                    <div className="text-[11px] text-gray-500 truncate" title={editForm.avatar || 'No avatar specified'}>
+                      {editForm.avatar || 'No avatar url specified'}
+                    </div>
+                    {editForm.avatar && (
+                      <button
+                        type="button"
+                        onClick={() => setEditForm(prev => ({ ...prev, avatar: '' }))}
+                        className="text-red-500 hover:text-red-755 font-semibold text-[11px] mt-1 flex items-center gap-0.5 cursor-pointer"
+                      >
+                        Remove Image
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div>
@@ -1048,7 +1230,7 @@ const Profile = () => {
               <div className="flex gap-2 pt-2">
                 <button 
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isSaving || isUploading}
                   className="bg-[#0A95FF] hover:bg-[#0074CC] text-white font-bold py-2 px-3 rounded shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] disabled:opacity-50"
                 >
                   {isSaving ? 'Saving...' : 'Save Profile'}

@@ -1,9 +1,31 @@
-import React from 'react';
-import { Info, HelpCircle, Star, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import API from '../../../services/api';
 
 const AboutPopover = ({ onClose }) => {
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    verifiedUsers: 10240,
+    questionsPosted: 52800,
+    tagCollectives: 184
+  });
+
+  useEffect(() => {
+    let active = true;
+    const fetchStats = async () => {
+      try {
+        const response = await API.get('/posts/global-stats');
+        if (active && response.data) {
+          setStats(response.data);
+        }
+      } catch (err) {
+        console.error('Error fetching global stats', err);
+      }
+    };
+    fetchStats();
+    return () => { active = false; };
+  }, []);
 
   return (
     <div className="absolute left-[30px] top-[42px] w-[320px] bg-white border border-[#e3e6e8] rounded shadow-xl z-50 text-[13px] text-gray-800 overflow-hidden transform origin-top-left transition-all p-5 font-sans">
@@ -19,15 +41,21 @@ const AboutPopover = ({ onClose }) => {
       <div className="border-t border-b border-[#e3e6e8] py-3.5 my-3.5 space-y-2.5">
         <div className="flex items-center justify-between text-[11px] font-normal">
           <span className="text-[#525960]">Verified Users</span>
-          <span className="font-bold text-[#232629] bg-[#f8f9f9] border border-[#e3e6e8] px-1.5 py-0.5 rounded">10,240</span>
+          <span className="font-bold text-[#232629] bg-[#f8f9f9] border border-[#e3e6e8] px-1.5 py-0.5 rounded">
+            {stats.verifiedUsers.toLocaleString()}
+          </span>
         </div>
         <div className="flex items-center justify-between text-[11px] font-normal">
           <span className="text-[#525960]">Questions Posted</span>
-          <span className="font-bold text-[#232629] bg-[#f8f9f9] border border-[#e3e6e8] px-1.5 py-0.5 rounded">52,800</span>
+          <span className="font-bold text-[#232629] bg-[#f8f9f9] border border-[#e3e6e8] px-1.5 py-0.5 rounded">
+            {stats.questionsPosted.toLocaleString()}
+          </span>
         </div>
         <div className="flex items-center justify-between text-[11px] font-normal">
           <span className="text-[#525960]">Tag Sub-Collectives</span>
-          <span className="font-bold text-[#232629] bg-[#f8f9f9] border border-[#e3e6e8] px-1.5 py-0.5 rounded">184</span>
+          <span className="font-bold text-[#232629] bg-[#f8f9f9] border border-[#e3e6e8] px-1.5 py-0.5 rounded">
+            {stats.tagCollectives.toLocaleString()}
+          </span>
         </div>
       </div>
 
@@ -55,3 +83,4 @@ const AboutPopover = ({ onClose }) => {
 };
 
 export default AboutPopover;
+
