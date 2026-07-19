@@ -1,6 +1,38 @@
 const nodemailer = require('nodemailer');
 
 /**
+ * Helper: Sends email via Resend HTTP API.
+ */
+const sendViaResendAPI = async (toEmail, subject, htmlContent, textContent, toName) => {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.EMAIL_FROM || "no-reply@connectsphere.com";
+
+  const payload = {
+    from: fromEmail,
+    to: toEmail,
+    subject: subject,
+    html: htmlContent,
+    text: textContent
+  };
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'User-Agent': 'connectsphere/1.0'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const responseData = await response.json();
+  if (!response.ok) {
+    throw new Error(responseData.message || `Resend API error: ${response.status}`);
+  }
+  return responseData;
+};
+
+/**
  * Helper: Sends email via Brevo HTTP API.
  */
 const sendViaBrevoAPI = async (toEmail, subject, htmlContent, textContent, toName) => {
@@ -44,7 +76,7 @@ const sendViaBrevoAPI = async (toEmail, subject, htmlContent, textContent, toNam
  * Sends a simplified OTP email to a user.
  */
 const sendOTPEmail = async (email, otp, username) => {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY, RESEND_API_KEY } = process.env;
   const subject = `ConnectSphere Verification Code: ${otp}`;
   const text = `Your ConnectSphere verification code is: ${otp}\n\nThis code is valid for 15 minutes.`;
   const html = `
@@ -56,7 +88,23 @@ const sendOTPEmail = async (email, otp, username) => {
     </div>
   `;
 
-  // 1. Try Brevo API if key is present
+  // 1. Try Resend API if key is present
+  if (RESEND_API_KEY) {
+    try {
+      const result = await sendViaResendAPI(email, subject, html, text, username);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[Resend API] Verification OTP email sent successfully to ${email}`);
+      }
+      return { success: true, mode: 'resend-api', messageId: result.id };
+    } catch (apiError) {
+      console.error(`[Resend API Error] Failed to send email to ${email}, trying fallback:`, apiError.message);
+      if (!BREVO_API_KEY && (!SMTP_HOST || !SMTP_USER || !SMTP_PASS)) {
+        return { success: false, mode: 'resend-error', error: apiError.message };
+      }
+    }
+  }
+
+  // 2. Try Brevo API if key is present
   if (BREVO_API_KEY) {
     try {
       const result = await sendViaBrevoAPI(email, subject, html, text, username);
@@ -123,7 +171,7 @@ const sendOTPEmail = async (email, otp, username) => {
  * Sends a simplified password reset email to a user.
  */
 const sendPasswordResetEmail = async (email, password, username) => {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY, RESEND_API_KEY } = process.env;
   const subject = `ConnectSphere Password Reset`;
   const text = `Your temporary password is: ${password}\n\nPlease change it after logging in.`;
   const html = `
@@ -135,7 +183,23 @@ const sendPasswordResetEmail = async (email, password, username) => {
     </div>
   `;
 
-  // 1. Try Brevo API if key is present
+  // 1. Try Resend API if key is present
+  if (RESEND_API_KEY) {
+    try {
+      const result = await sendViaResendAPI(email, subject, html, text, username);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[Resend API] Password reset email sent successfully to ${email}`);
+      }
+      return { success: true, mode: 'resend-api', messageId: result.id };
+    } catch (apiError) {
+      console.error(`[Resend API Error] Failed to send password reset email, trying fallback:`, apiError.message);
+      if (!BREVO_API_KEY && (!SMTP_HOST || !SMTP_USER || !SMTP_PASS)) {
+        return { success: false, mode: 'resend-error', error: apiError.message };
+      }
+    }
+  }
+
+  // 2. Try Brevo API if key is present
   if (BREVO_API_KEY) {
     try {
       const result = await sendViaBrevoAPI(email, subject, html, text, username);
@@ -202,7 +266,7 @@ const sendPasswordResetEmail = async (email, password, username) => {
  * Sends a simplified Login Verification OTP email to a user.
  */
 const sendLoginOTPEmail = async (email, otp, username) => {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY, RESEND_API_KEY } = process.env;
   const subject = `ConnectSphere Login Verification Code: ${otp}`;
   const text = `Your login verification code is: ${otp}\n\nThis code is valid for 15 minutes.`;
   const html = `
@@ -214,7 +278,23 @@ const sendLoginOTPEmail = async (email, otp, username) => {
     </div>
   `;
 
-  // 1. Try Brevo API if key is present
+  // 1. Try Resend API if key is present
+  if (RESEND_API_KEY) {
+    try {
+      const result = await sendViaResendAPI(email, subject, html, text, username);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[Resend API] Login OTP email sent successfully to ${email}`);
+      }
+      return { success: true, mode: 'resend-api', messageId: result.id };
+    } catch (apiError) {
+      console.error(`[Resend API Error] Failed to send login OTP email, trying fallback:`, apiError.message);
+      if (!BREVO_API_KEY && (!SMTP_HOST || !SMTP_USER || !SMTP_PASS)) {
+        return { success: false, mode: 'resend-error', error: apiError.message };
+      }
+    }
+  }
+
+  // 2. Try Brevo API if key is present
   if (BREVO_API_KEY) {
     try {
       const result = await sendViaBrevoAPI(email, subject, html, text, username);
@@ -281,7 +361,7 @@ const sendLoginOTPEmail = async (email, otp, username) => {
  * Sends a simplified subscription invoice email to a user.
  */
 const sendSubscriptionInvoiceEmail = async (email, username, planName, amount, invoiceId) => {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY } = process.env;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, EMAIL_FROM, BREVO_API_KEY, RESEND_API_KEY } = process.env;
   const subject = `ConnectSphere Invoice - ${planName} Subscription`;
   const text = `Hi ${username},\n\nThank you for subscribing to our ${planName} Plan. Here are your subscription details:\n\nInvoice ID: ${invoiceId}\nPlan: ${planName}\nAmount Paid: ₹${amount}.00\n\nBest regards,\nConnectSphere Team`;
   const html = `
@@ -298,7 +378,23 @@ const sendSubscriptionInvoiceEmail = async (email, username, planName, amount, i
     </div>
   `;
 
-  // 1. Try Brevo API if key is present
+  // 1. Try Resend API if key is present
+  if (RESEND_API_KEY) {
+    try {
+      const result = await sendViaResendAPI(email, subject, html, text, username);
+      if (process.env.NODE_ENV !== 'production') {
+        console.log(`[Resend API] Subscription invoice email sent successfully to ${email}`);
+      }
+      return { success: true, mode: 'resend-api', messageId: result.id };
+    } catch (apiError) {
+      console.error(`[Resend API Error] Failed to send subscription invoice email, trying fallback:`, apiError.message);
+      if (!BREVO_API_KEY && (!SMTP_HOST || !SMTP_USER || !SMTP_PASS)) {
+        return { success: false, mode: 'resend-error', error: apiError.message };
+      }
+    }
+  }
+
+  // 2. Try Brevo API if key is present
   if (BREVO_API_KEY) {
     try {
       const result = await sendViaBrevoAPI(email, subject, html, text, username);
