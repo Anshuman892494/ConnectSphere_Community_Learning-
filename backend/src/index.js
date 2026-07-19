@@ -12,8 +12,28 @@ connectDB();
 const app = express();
 
 // Standard Middlewares
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://connectsphere-community-learning-frontend.onrender.com'
+];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl, postman)
+    if (!origin) return callback(null, true);
+
+    const url = origin.toLowerCase();
+    const isAllowed = allowedOrigins.includes(origin) ||
+                      url.endsWith('.onrender.com') ||
+                      (process.env.FRONTEND_URL && origin === process.env.FRONTEND_URL);
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
