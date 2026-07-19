@@ -120,7 +120,7 @@ const ForgotPassword = () => {
               </div>
 
               {/* Developer Assistant Mode */}
-              {tempPassword && (
+              {import.meta.env.DEV && tempPassword && (
                 <div className="p-4 bg-[#E1ECF4] border border-[#7AA7C7] rounded-[3px] text-left">
                   <div className="text-[11px] font-bold text-[#0074CC] uppercase tracking-wider mb-2">
                     Developer Mode

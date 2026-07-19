@@ -207,7 +207,7 @@ const Verify = () => {
 
       <div className="w-full max-w-[316px]">
         {/* Verification Checklist / Dev Test Help Alert */}
-        {(devEmailCode || devPhoneCode) && (
+        {import.meta.env.DEV && (devEmailCode || devPhoneCode) && (
           <div className="p-4 mb-4 rounded-[5px] border border-[#7AA7C7] bg-[#E1ECF4]">
             <h4 className="text-[11px] font-bold text-[#0074CC] uppercase tracking-widest mb-2">
               Developer Mode OTP codes

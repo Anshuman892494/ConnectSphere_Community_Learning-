@@ -1063,7 +1063,7 @@ const Profile = () => {
                 </div>
 
                 {/* Dev Assistant Banner */}
-                {devOtp && (
+                {import.meta.env.DEV && devOtp && (
                   <div className="p-3.5 bg-blue-50 border border-[#7AA7C7] rounded">
                     <div className="text-[10px] font-bold text-[#0074CC] uppercase tracking-wider mb-1">
                       Developer Mode Assistance

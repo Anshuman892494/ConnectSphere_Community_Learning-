@@ -135,7 +135,7 @@ const PhoneVerificationModal = () => {
           )}
 
           {/* Dev OTP Box */}
-          {step === 2 && devOtpCode && (
+          {import.meta.env.DEV && step === 2 && devOtpCode && (
             <div className="bg-[#E1ECF4] border border-[#7AA7C7] rounded-[3px] p-3 text-[12px] text-[#3B4045] mb-4">
               <div className="text-[10px] font-bold text-[#0074CC] uppercase tracking-wider mb-1">Developer Mode Assistant</div>
               <div className="flex justify-between items-center">

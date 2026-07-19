@@ -160,7 +160,7 @@ const Login = () => {
               We've sent a 6-digit verification code to <span className="font-semibold text-gray-900">{otpEmail}</span>.
             </p>
 
-            {devOtp && (
+            {import.meta.env.DEV && devOtp && (
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-[12px] text-amber-800 flex flex-col gap-1">
                 <span className="font-bold uppercase tracking-wider text-[10px] text-amber-600">Developer Mode Assistant</span>
                 <div className="flex justify-between items-center">
