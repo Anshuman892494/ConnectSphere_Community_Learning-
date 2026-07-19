@@ -18,7 +18,9 @@ const protect = async (req, res, next) => {
 
     // Ensure JWT_SECRET is configured — never use a hardcoded fallback
     if (!process.env.JWT_SECRET) {
-      console.error('FATAL: JWT_SECRET environment variable is not set!');
+      if (process.env.NODE_ENV !== 'production') {
+        console.error('FATAL: JWT_SECRET environment variable is not set!');
+      }
       return res.status(500).json({ message: 'Server configuration error' });
     }
 

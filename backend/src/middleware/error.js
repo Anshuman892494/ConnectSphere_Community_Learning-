@@ -6,7 +6,9 @@ const errorHandler = (err, req, res, next) => {
   error.message = err.message;
 
   // Log to console for dev
-  console.error(err.stack || err);
+  if (process.env.NODE_ENV !== 'production') {
+    console.error(err.stack || err);
+  }
 
   // Log to error.log file for inspection
   try {
@@ -14,7 +16,9 @@ const errorHandler = (err, req, res, next) => {
     const logMsg = `[${new Date().toISOString()}] ${req.method} ${req.originalUrl}\n${err.stack || err}\n\n`;
     fs.appendFileSync(logPath, logMsg);
   } catch (logErr) {
-    console.error('Failed to write to error.log', logErr);
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('Failed to write to error.log', logErr);
+    }
   }
 
   // Mongoose bad ObjectId

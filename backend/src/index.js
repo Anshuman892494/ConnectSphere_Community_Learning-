@@ -1,3 +1,5 @@
+const dns = require('dns');
+dns.setDefaultResultOrder('ipv4first');
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
@@ -22,7 +24,9 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Log requests
 app.use((req, res, next) => {
-  console.log(`${req.method} ${req.originalUrl}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`${req.method} ${req.originalUrl}`);
+  }
   next();
 });
 
@@ -33,11 +37,13 @@ const { apiLimiter, authLimiter } = require('./middleware/rateLimiter');
 const authRoutes = require('./routes/auth.routes');
 const postRoutes = require('./routes/post.routes');
 const usersRoutes = require('./routes/users.routes');
+const subscriptionRoutes = require('./routes/subscription.routes');
 
 // Use rate limiters & routes
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/posts', apiLimiter, postRoutes);
 app.use('/api/users', apiLimiter, usersRoutes);
+app.use('/api/subscriptions', apiLimiter, subscriptionRoutes);
 
 // Base route
 app.get('/', (req, res) => {
@@ -50,12 +56,16 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 const server = app.listen(PORT, () => {
-  console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Server is running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+  }
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err, promise) => {
-  console.log(`Unhandled Rejection Error: ${err.message}`);
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Unhandled Rejection Error: ${err.message}`);
+  }
   // Close server & exit process
   server.close(() => process.exit(1));
 });
