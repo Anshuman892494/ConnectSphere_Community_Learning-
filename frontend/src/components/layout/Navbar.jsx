@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Inbox, Trophy, HelpCircle, LogOut, Menu } from 'lucide-react';
-import { logout } from '../../store/authSlice';
+import { logout, updateUser } from '../../store/authSlice';
 import { toggleMobileSidebar } from '../../store/themeSlice';
 import API from '../../services/api';
 
@@ -16,6 +16,7 @@ const Navbar = () => {
   const { user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [activeDropdown, setActiveDropdown] = useState(null);
   const navRef = useRef(null);
@@ -23,6 +24,21 @@ const Navbar = () => {
   const toggleDropdown = (name) => {
     setActiveDropdown((prev) => (prev === name ? null : name));
   };
+
+  useEffect(() => {
+    const fetchUserReputation = async () => {
+      if (!user) return;
+      try {
+        const response = await API.get('/auth/me');
+        if (response.data) {
+          dispatch(updateUser(response.data));
+        }
+      } catch (err) {
+        console.error('Failed to sync user reputation:', err);
+      }
+    };
+    fetchUserReputation();
+  }, [dispatch, user?._id, location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
