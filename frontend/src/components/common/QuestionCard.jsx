@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Trash2, ArrowUp } from 'lucide-react';
 
@@ -16,25 +16,7 @@ const QuestionCard = ({
   const votes = upvotesCount - downvotesCount;
   const answers = post.comments?.length || 0;
   
-  // Use a stable random seed based on post ID so mock views don't jump around on re-renders
-  const mockViews = useMemo(() => {
-    let hash = 0;
-    const str = post._id || '';
-    for (let i = 0; i < str.length; i++) {
-      hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash % 100) + Math.abs(votes) * 2;
-  }, [post._id, votes]);
 
-  // Stable hash-based mock reputation (avoids Math.random flicker)
-  const mockReputation = useMemo(() => {
-    const str = post.user?._id || post.user || '';
-    let hash = 0;
-    for (let i = 0; i < str.toString().length; i++) {
-      hash = str.toString().charCodeAt(i) + ((hash << 5) - hash);
-    }
-    return Math.abs(hash % 5000) + 100;
-  }, [post.user?._id, post.user]);
 
   // Use actual tags — no fake defaults
   const postTags = post.tags && post.tags.length > 0 ? post.tags : [];
@@ -62,7 +44,7 @@ const QuestionCard = ({
           <span>{answers}</span> answers
         </div>
         <div className="text-xs text-gray-400">
-          {mockViews} views
+          {post.views || 0} views
         </div>
         <div className="sm:mt-1.5">
           <button 
@@ -136,7 +118,7 @@ const QuestionCard = ({
               {postOwnerName}
             </Link>
             <span className="font-bold text-gray-600 text-[10px]" title="Reputation score">
-              {mockReputation}
+              {post.user?.reputation || 1}
             </span>
             <span className="text-gray-400">asked {formatDate(post.createdAt)}</span>
           </div>

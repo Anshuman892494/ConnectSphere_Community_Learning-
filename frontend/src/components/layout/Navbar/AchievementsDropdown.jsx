@@ -1,7 +1,10 @@
 import React from 'react';
 import { Trophy, Award, TrendingUp } from 'lucide-react';
+import { useSelector } from 'react-redux';
 
 const AchievementsDropdown = ({ onClose }) => {
+  const { user } = useSelector((state) => state.auth);
+
   const achievements = [
     {
       id: 1,
@@ -48,7 +51,7 @@ const AchievementsDropdown = ({ onClose }) => {
         </span>
         <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#6a737c] bg-[#e3e6e8]/40 px-2 py-0.5 rounded">
           <TrendingUp size={11} className="text-emerald-600" />
-          <span>Rep: 1</span>
+          <span>Rep: {user?.reputation !== undefined ? user.reputation.toLocaleString() : 1}</span>
         </div>
       </div>
 

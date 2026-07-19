@@ -2,15 +2,35 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, X, Hash } from 'lucide-react';
 import { useLanguage } from '../../../contexts/LanguageContext';
+import API from '../../../services/api';
 
 const SearchBar = () => {
   const [query, setQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [popularTags, setPopularTags] = useState(['javascript', 'react', 'css', 'html', 'node.js', 'tailwindcss', 'mongodb', 'express']);
   const navigate = useNavigate();
   const containerRef = useRef(null);
   const { t } = useLanguage();
 
-  const popularTags = ['javascript', 'react', 'css', 'html', 'node.js', 'tailwindcss', 'mongodb', 'express'];
+  useEffect(() => {
+    let active = true;
+    const fetchTags = async () => {
+      try {
+        const response = await API.get('/posts/tags');
+        if (active && response.data && Array.isArray(response.data)) {
+          const tagNames = response.data.map(t => t._id).filter(Boolean);
+          if (tagNames.length > 0) {
+            setPopularTags(tagNames.slice(0, 8));
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching popular tags', err);
+      }
+    };
+    fetchTags();
+    return () => { active = false; };
+  }, []);
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {

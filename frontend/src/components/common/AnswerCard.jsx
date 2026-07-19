@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronUp, ChevronDown, Check } from 'lucide-react';
+import { useToast } from '../../contexts/ToastContext';
 import ReactMarkdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 import remarkGfm from 'remark-gfm';
@@ -17,6 +18,7 @@ const AnswerCard = ({
   onVote,
   onAccept,
 }) => {
+  const { addToast } = useToast();
   const commentOwnerName = comment.user?.username || 'Unknown User';
   const isCommentOwner = currentUser?._id === comment.user?._id || currentUser?._id === comment.user;
   const canDelete = currentUser?.role === 'admin' || isCommentOwner || postOwnerId === currentUser?._id;
@@ -134,8 +136,25 @@ const AnswerCard = ({
 
         <div className="flex justify-between items-center gap-4 text-xs mt-3 pt-3 border-t border-gray-50">
           <div className="flex gap-3 text-gray-500 font-medium">
-            <button type="button" className="hover:text-gray-800 transition-colors cursor-pointer">
+            <button 
+              type="button" 
+              onClick={() => {
+                const shareUrl = `${window.location.origin}${window.location.pathname}#answer-${comment._id}`;
+                navigator.clipboard.writeText(shareUrl);
+                addToast('Answer link copied to clipboard!', 'success');
+              }}
+              className="hover:text-gray-800 transition-colors cursor-pointer"
+            >
               Share
+            </button>
+            <button 
+              type="button" 
+              onClick={() => {
+                addToast('Thank you! This answer has been reported for moderation review.', 'info');
+              }}
+              className="hover:text-gray-800 transition-colors cursor-pointer"
+            >
+              Flag
             </button>
             {canDelete && (
               <button

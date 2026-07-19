@@ -1,12 +1,14 @@
 import React from 'react';
 import { Users, Shield, Zap, Sparkles } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useToast } from '../../../contexts/ToastContext';
 
 const ForTeamsPopover = ({ onClose }) => {
   const { addToast } = useToast();
+  const navigate = useNavigate();
 
   const handleStartTrial = () => {
-    addToast('Your 30-day Free Trial of Teams has been set up successfully!', 'success');
+    navigate('/settings?tab=subscription');
     onClose();
   };
 

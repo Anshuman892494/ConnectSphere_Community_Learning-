@@ -1,6 +1,15 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route, Outlet } from 'react-router-dom';
+import { Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
+
+// Scroll to top of viewport on route change
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+  return null;
+};
 
 // Lazy-loaded Pages
 const Login = lazy(() => import('../pages/Login'));
@@ -48,6 +57,7 @@ const DashboardLayout = () => {
 const AppRoutes = () => {
   return (
     <Suspense fallback={<PageLoader />}>
+      <ScrollToTop />
       <Routes>
         {/* Public Pages */}
         <Route path="/login" element={<Login />} />

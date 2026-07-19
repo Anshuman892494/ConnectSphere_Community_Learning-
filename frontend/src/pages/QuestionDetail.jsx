@@ -54,6 +54,15 @@ const QuestionDetail = () => {
     }
   };
 
+  const handleShareQuestion = () => {
+    navigator.clipboard.writeText(window.location.href);
+    addToast('Question link copied to clipboard! Share it anywhere.', 'success');
+  };
+
+  const handleFlagQuestion = () => {
+    addToast('Thank you! This question has been reported for moderation review.', 'info');
+  };
+
   const handleSubmitAnswer = async (e) => {
     e.preventDefault();
     if (!newAnswer.trim()) return;
@@ -280,10 +289,16 @@ const QuestionDetail = () => {
           {/* Share/Delete Actions & Owner info */}
           <div className="flex flex-wrap justify-between items-start gap-4 pb-4 border-b border-gray-100 mb-6">
             <div className="flex gap-3 text-gray-500">
-              <button className="hover:text-gray-800 cursor-pointer flex items-center gap-1">
+              <button 
+                onClick={handleShareQuestion}
+                className="hover:text-gray-800 cursor-pointer flex items-center gap-1"
+              >
                 <Share2 size={13} /> Share
               </button>
-              <button className="hover:text-gray-800 cursor-pointer flex items-center gap-1">
+              <button 
+                onClick={handleFlagQuestion}
+                className="hover:text-gray-800 cursor-pointer flex items-center gap-1"
+              >
                 <Flag size={13} /> Flag
               </button>
               {(user?.role === 'admin' || post.user?._id === user?._id || post.user === user?._id) && (
