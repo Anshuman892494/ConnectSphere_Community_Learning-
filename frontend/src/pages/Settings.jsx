@@ -17,13 +17,15 @@ import {
   Shield,
   X
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 // Import refactored setting tabs
 import PreferencesTab from './Settings/PreferencesTab';
 import SecurityTab from './Settings/SecurityTab';
 import LanguageTab from './Settings/LanguageTab';
 import ProfileTab from './Settings/ProfileTab';
+import SubscriptionTab from './Settings/SubscriptionTab';
+import EmailTab from './Settings/EmailTab';
 
 const Settings = () => {
   const { user } = useSelector((state) => state.auth);
@@ -32,6 +34,20 @@ const Settings = () => {
 
   // Selected Section State
   const [activeSection, setActiveSection] = useState('preferences');
+  const location = useLocation();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    if (tab && ['preferences', 'security', 'language', 'subscription', 'edit-profile', 'email-settings'].includes(tab)) {
+      setActiveSection(tab);
+    }
+  }, [location]);
+
+  // Scroll to top of viewport when active settings section changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [activeSection]);
 
   // Preferences Toggles States
   const [preferences, setPreferences] = useState(() => {
@@ -374,8 +390,10 @@ const Settings = () => {
               <ul className="space-y-0.5">
                 <li>
                   <button 
-                    onClick={() => addToast('Email frequency options updated.', 'info')}
-                    className="w-full text-left px-3 py-1.5 rounded-full text-xs font-normal hover:bg-gray-100 text-gray-655 cursor-pointer"
+                    onClick={() => setActiveSection('email-settings')}
+                    className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                      activeSection === 'email-settings' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-655'
+                    }`}
                   >
                     Edit email settings
                   </button>
@@ -416,6 +434,16 @@ const Settings = () => {
                     }`}
                   >
                     Language Settings
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={() => setActiveSection('subscription')}
+                    className={`w-full text-left px-3 py-1.5 rounded-full text-xs font-normal transition-all cursor-pointer ${
+                      activeSection === 'subscription' ? 'bg-[#F1F2F3] font-bold text-gray-900' : 'hover:bg-gray-100 text-gray-655'
+                    }`}
+                  >
+                    {t('subscriptionPlan')}
                   </button>
                 </li>
               </ul>
@@ -505,6 +533,14 @@ const Settings = () => {
               isSwappingLanguage={isSwappingLanguage}
               handleRequestLanguage={handleRequestLanguage}
             />
+          )}
+
+          {activeSection === 'subscription' && (
+            <SubscriptionTab />
+          )}
+
+          {activeSection === 'email-settings' && (
+            <EmailTab />
           )}
 
           {activeSection === 'edit-profile' && (

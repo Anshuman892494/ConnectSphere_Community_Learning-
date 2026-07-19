@@ -3,7 +3,7 @@ import { store } from '../store';
 import { logout, refreshTokenSuccess } from '../store/authSlice';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -49,7 +49,7 @@ API.interceptors.response.use(
       try {
         // Attempt to get a new access token using the HTTP-only refresh token cookie
         const res = await axios.post(
-          'http://localhost:5000/api/auth/refresh',
+          `${import.meta.env.VITE_API_URL}/auth/refresh`,
           {},
           { withCredentials: true }
         );
