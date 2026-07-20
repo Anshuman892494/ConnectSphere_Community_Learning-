@@ -20,6 +20,7 @@ const {
 } = require('../controllers/post.controller');
 const { protect, optionalProtect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { isCloudinaryConfigured, uploadToCloudinary } = require('../utils/cloudinary');
 
 // Search (must be before /:id to avoid conflicts)
 router.get('/search', optionalProtect, searchPosts);
@@ -43,12 +44,22 @@ router.route('/:id')
   .delete(protect, deletePost);
 
 // Voting & interactions
-router.post('/upload', protect, upload.single('media'), (req, res) => {
+router.post('/upload', protect, upload.single('media'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl });
+  try {
+    if (isCloudinaryConfigured) {
+      const result = await uploadToCloudinary(req.file.path);
+      res.json({ url: result.secure_url });
+    } else {
+      const fileUrl = `/uploads/${req.file.filename}`;
+      res.json({ url: fileUrl });
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ message: 'Failed to upload media' });
+  }
 });
 
 router.post('/:id/like', protect, likePost);

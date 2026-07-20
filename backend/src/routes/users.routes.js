@@ -12,15 +12,26 @@ const {
 } = require('../controllers/user.controller');
 const { protect, optionalProtect } = require('../middleware/auth');
 const upload = require('../middleware/upload');
+const { isCloudinaryConfigured, uploadToCloudinary } = require('../utils/cloudinary');
 
 router.get('/', optionalProtect, getUsers);
 router.put('/profile', protect, updateProfile);
-router.post('/profile/avatar', protect, upload.single('avatar'), (req, res) => {
+router.post('/profile/avatar', protect, upload.single('avatar'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'No file uploaded' });
   }
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl });
+  try {
+    if (isCloudinaryConfigured) {
+      const result = await uploadToCloudinary(req.file.path);
+      res.json({ url: result.secure_url });
+    } else {
+      const fileUrl = `/uploads/${req.file.filename}`;
+      res.json({ url: fileUrl });
+    }
+  } catch (error) {
+    console.error('Upload error:', error);
+    res.status(500).json({ message: 'Failed to upload avatar' });
+  }
 });
 
 // Notifications routes
